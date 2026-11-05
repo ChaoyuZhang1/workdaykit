@@ -84,7 +84,52 @@ tr:last-child td{border-bottom:0}
 .faq dt{font-weight:650;margin-top:14px}.faq dd{margin:4px 0 0;color:var(--muted);font-size:.92rem}
 .site-foot{border-top:1px solid var(--line);margin-top:56px;padding:26px 0 40px;font-size:.84rem;color:var(--muted)}
 .muted{color:var(--muted)}
+html{scroll-behavior:smooth}
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .62s cubic-bezier(.16,1,.3,1),transform .62s cubic-bezier(.16,1,.3,1)}
+.reveal.in{opacity:1;transform:none}
+.site-head{transition:box-shadow .3s cubic-bezier(.16,1,.3,1)}
+.site-head.scrolled{box-shadow:0 10px 34px rgba(21,22,26,.08)}
+.btn{transition:transform .18s cubic-bezier(.16,1,.3,1),box-shadow .25s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(21,22,26,.18)}
+.card{transition:transform .28s cubic-bezier(.16,1,.3,1),box-shadow .28s}
+.card:hover{transform:translateY(-3px);box-shadow:0 20px 48px rgba(21,22,26,.10)}
+.hero{position:relative;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:-50% -10% auto -10%;height:130%;background:radial-gradient(600px 300px at 18% 6%,rgba(15,107,92,.09),transparent 62%),radial-gradient(520px 260px at 88% 0%,rgba(194,118,26,.09),transparent 60%);pointer-events:none}
+.hero>*{position:relative}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:#faf7f0}
+::selection{background:rgba(15,107,92,.18)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
 @media(max-width:640px){nav{gap:12px}nav a{font-size:.82rem}.calc{padding:16px}.head-inner{height:auto;min-height:56px;flex-wrap:wrap;padding:8px 0}}
+"""
+
+MOTION_JS = """
+(function(){
+  var head = document.querySelector('.site-head');
+  function onScroll(){ if (head) head.classList.toggle('scrolled', window.scrollY > 8); }
+  window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) return;
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(en){ if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, { rootMargin: '0px 0px -40px 0px', threshold: 0.08 });
+  document.querySelectorAll('.sec, .card, .calc, .tbl-wrap, .grid > *').forEach(function(el){ el.classList.add('reveal'); io.observe(el); });
+  var nums = document.querySelectorAll('.result-num, .stat .num');
+  if (nums.length) {
+    var io2 = new IntersectionObserver(function(es){
+      es.forEach(function(en){
+        if (!en.isIntersecting) return;
+        var el = en.target; io2.unobserve(el);
+        var n = parseInt(el.textContent.trim().replace(/,/g, ''), 10);
+        if (isNaN(n) || n > 1000000) return;
+        var t0 = performance.now();
+        function step(t){ var p = Math.min(1, (t - t0) / 800); el.textContent = Math.round(n * (1 - Math.pow(1 - p, 3))).toLocaleString(); if (p < 1) requestAnimationFrame(step); }
+        requestAnimationFrame(step);
+      });
+    }, { threshold: 0.4 });
+    nums.forEach(function(el){ io2.observe(el); });
+  }
+})();
 """
 
 
@@ -118,7 +163,8 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         '<meta name="robots" content="index,follow">'
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
         f"<style>{CSS}</style></head><body>{nav}"
-        f'<main class="wrap">{body}</main>{foot}{extra}</body></html>'
+        f'<main class="wrap">{body}</main>{foot}'
+        f"<script>{MOTION_JS}</script>{extra}</body></html>"
     )
 
 
