@@ -609,6 +609,7 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         f'<p><a href="{base}privacy/index.html">Privacy</a> · '
         f'<a href="{base}about/index.html">About</a> · '
         f'<a href="{base}index.html">Calculator</a> · '
+        f'<a href="{base}support/index.html">♥ Support · 打赏</a> · '
         '<a href="https://holidaykit.pages.dev">Holiday calendars &amp; long weekends</a></p>'
         "</div></footer>"
     )
@@ -632,6 +633,58 @@ FAVICON = (
     '<path d="M20 26h24M20 36h14M20 46h9" stroke="#fbfaf7" stroke-width="3.4" stroke-linecap="round"/>'
     '<circle cx="45" cy="44" r="6" fill="#0f6b5c"/></svg>'
 )
+
+
+def page_support(site_url: str) -> str:
+    def media(img: str, alt: str) -> str:
+        path = ROOT / "assets" / "support" / f"{img}.png"
+        if path.exists():
+            return f'<img class="sup-qr" src="../assets/support/{img}.png" alt="{alt}" loading="lazy">'
+        return f'<div class="sup-ph" aria-hidden="true">QR<br><code>assets/support/{img}.png</code></div>'
+
+    cards = "".join([
+        '<div class="sup-card">' + media("wechat", "WeChat tip QR code") +
+        '<h3>微信赞赏</h3><p>扫码随意打赏，金额随意。</p></div>',
+        '<div class="sup-card">' + media("alipay", "Alipay tip QR code") +
+        '<h3>支付宝</h3><p>扫码打赏，支持项目持续更新。</p></div>',
+        '<div class="sup-card"><div class="sup-ico">☕</div><h3>Buy me a coffee</h3>'
+        '<p>International cards / PayPal.</p>'
+        '<a class="btn" href="https://buymeacoffee.com/" target="_blank" rel="noopener">Open</a></div>',
+        '<div class="sup-card"><div class="sup-ico">★</div><h3>GitHub Sponsors</h3>'
+        '<p>Monthly or one-time sponsorship.</p>'
+        '<a class="btn" href="https://github.com/sponsors/ChaoyuZhang1" target="_blank" '
+        'rel="noopener">Sponsor</a></div>',
+    ])
+    body = (
+        '<style>'
+        '.sup-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:22px 0}'
+        '@media(max-width:820px){.sup-grid{grid-template-columns:repeat(2,1fr)}}'
+        '@media(max-width:460px){.sup-grid{grid-template-columns:1fr}}'
+        '.sup-card{background:#fff;border:1px solid #e7e3da;border-radius:16px;padding:18px;text-align:center}'
+        '.sup-qr{width:100%;max-width:180px;border-radius:12px;display:block;margin:0 auto 12px}'
+        '.sup-ph{height:150px;border:2px dashed #d9d3c7;border-radius:12px;display:flex;flex-direction:column;'
+        'align-items:center;justify-content:center;gap:6px;color:#8a8274;font-size:.78rem;margin-bottom:12px}'
+        '.sup-ph code{font-size:.7rem;word-break:break-all}'
+        '.sup-ico{font-size:2.2rem;line-height:1;margin:26px 0 14px}'
+        '.sup-card h3{margin:0 0 6px;font-size:1.02rem}.sup-card p{color:#6b6558;font-size:.86rem;margin:0 0 12px}'
+        '</style>'
+        '<section class="hero"><p class="eyebrow">SUPPORT · 打赏支持</p>'
+        '<h1>Keep WorkdayKit free</h1>'
+        '<p class="lede">If WorkdayKit saved you time, you can buy me a coffee. Tips are optional — the '
+        'calculator, countdown and API stay free for everyone.</p></section>'
+        '<section class="sec"><h2>打赏方式</h2><div class="sup-grid">' + cards + '</div>'
+        '<p class="muted">打赏完全自愿，不换取任何功能、数据或优先级。</p></section>'
+        '<section class="sec"><h2>打赏用在哪里</h2><ul>'
+        '<li>维护 95 个国家的假期与调休数据</li>'
+        '<li>域名、CDN 与构建基础设施费用</li>'
+        '<li>继续完善工作日 API 与倒计时页面</li></ul></section>'
+        '<section class="sec"><h2>Commercial API use</h2>'
+        '<p>The JSON API is free under a generous fair-use policy. For commercial use or a higher-volume '
+        'guarantee, a sponsor licence is available — tip above and get in touch.</p></section>'
+    )
+    return page("Support WorkdayKit · 打赏支持",
+                "Support WorkdayKit with a tip — WeChat, Alipay, Buy Me a Coffee or GitHub Sponsors.",
+                f"{site_url}/support/", body, base="../")
 
 
 def calc_widget(default_cc: str, countries: list[dict], preview: str = "") -> str:
@@ -1197,8 +1250,21 @@ def main() -> int:
         encoding="utf-8",
     )
     urls.append("privacy/")
+    (out / "support").mkdir(exist_ok=True)
+    (out / "support" / "index.html").write_text(page_support(site_url), encoding="utf-8")
+    urls.append("support/")
 
     (out / "favicon.svg").write_text(FAVICON, encoding="utf-8")
+    (out / "_headers").write_text(
+        "/api/*\n  Access-Control-Allow-Origin: *\n  Cache-Control: public, max-age=86400\n"
+        "/assets/support/*\n  Cache-Control: public, max-age=604800\n",
+        encoding="utf-8",
+    )
+    support_dir = ROOT / "assets" / "support"
+    if support_dir.exists():
+        (out / "assets" / "support").mkdir(parents=True, exist_ok=True)
+        for p in support_dir.glob("*.png"):
+            (out / "assets" / "support" / p.name).write_bytes(p.read_bytes())
     (out / "robots.txt").write_text(
         f"User-agent: *\nAllow: /\nSitemap: {site_url}/sitemap.xml\n", encoding="utf-8"
     )
