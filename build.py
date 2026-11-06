@@ -827,7 +827,8 @@ def main() -> int:
     (out / "countdown" / "index.html").write_text(
         page("Business Days Left in " + str(static_year) + " — Live Countdown",
              "Live countdown of remaining business days in the year, auto-detected for your country. Weekends and public holidays excluded.",
-             f"{site_url}/countdown/", cd_body, extra=wkdata + "<script>" + COUNTDOWN_JS + "</script>"),
+             f"{site_url}/countdown/", cd_body, base="../",
+             extra=wkdata + "<script>" + COUNTDOWN_JS + "</script>"),
         encoding="utf-8",
     )
     urls.append("countdown/")
