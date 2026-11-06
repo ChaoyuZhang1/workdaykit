@@ -103,6 +103,33 @@ tbody tr:hover{background:#faf7f0}
 ::selection{background:rgba(15,107,92,.18)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
 @media(max-width:640px){nav{gap:12px}nav a{font-size:.82rem}.calc{padding:16px}.head-inner{height:auto;min-height:56px;flex-wrap:wrap;padding:8px 0}}
+.cd-hero{position:relative;overflow:hidden;border-radius:26px;margin:28px 0 10px;padding:44px 34px;background:linear-gradient(135deg,#0d1b18 0%,#0b1520 55%,#0a0f16 100%);color:#eef4f2;box-shadow:0 30px 80px rgba(10,16,24,.28)}
+.cd-hero::before{content:"";position:absolute;inset:-40% -20% auto -20%;height:130%;background:radial-gradient(600px 320px at 18% 6%,rgba(34,197,94,.20),transparent 62%),radial-gradient(520px 280px at 86% 0%,rgba(56,189,248,.18),transparent 60%);pointer-events:none}
+.cd-hero>*{position:relative}
+.cd-hero .eyebrow{color:#7dd3a8}
+.cd-hero h1{color:#f7fbfa}
+.cd-hero .lede{color:#b9c6c2;max-width:36em}
+.cd-wrap{display:grid;grid-template-columns:220px 1fr;gap:26px;align-items:center;margin-top:18px}
+@media(max-width:760px){.cd-wrap{grid-template-columns:1fr}}
+.cd-ring{position:relative;width:200px;height:200px;margin:0 auto}
+.cd-ring svg{transform:rotate(-90deg);width:100%;height:100%}
+.cd-ring .ring-bg{fill:none;stroke:rgba(255,255,255,.10);stroke-width:10}
+.cd-ring .ring-fg{fill:none;stroke:#22c55e;stroke-width:10;stroke-linecap:round;stroke-dasharray:339.3;stroke-dashoffset:339.3;transition:stroke-dashoffset 1.4s cubic-bezier(.16,1,.3,1)}
+.cd-ring-mid{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.cd-big{font-family:var(--font-display);font-size:3.1rem;line-height:1;color:#f7fbfa}
+.cd-big span{display:block;font-family:var(--font-body);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#8fa39d;margin-top:6px}
+.cd-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.cd-tile{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:16px 18px;backdrop-filter:blur(6px)}
+.cd-tile .v{font-family:var(--font-display);font-size:1.9rem;line-height:1.05;color:#f7fbfa}
+.cd-tile .k{font-size:.72rem;color:#94a8a2;margin-top:4px;letter-spacing:.04em}
+.cd-tile .dot-live{display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin-right:6px;animation:cdpulse 1.8s infinite}
+@keyframes cdpulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+.cd-country{display:flex;gap:10px;align-items:center;margin-top:20px;color:#b9c6c2;font-size:.86rem;flex-wrap:wrap}
+.cd-country select{background:rgba(255,255,255,.08);color:#eef4f2;border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:8px 12px;font-size:.86rem}
+.cd-note{color:#8fa39d;font-size:.8rem;margin-top:14px}
+.cd-pop{animation:cdpop .6s cubic-bezier(.16,1,.3,1)}
+@keyframes cdpop{0%{transform:scale(.94);opacity:.6}100%{transform:scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){.cd-ring .ring-fg{transition:none}.cd-tile .dot-live{animation:none}}
 """
 
 MOTION_JS = """
@@ -135,11 +162,92 @@ MOTION_JS = """
 """
 
 
+COUNTDOWN_JS = """
+(function(){
+  var root=document.getElementById('hk-countdown'); if(!root) return;
+  var COUNTRIES=window.WK.countries||[];
+  var TZ={'Asia/Shanghai':'CN','Asia/Hong_Kong':'HK','Asia/Taipei':'TW','Asia/Tokyo':'JP','Asia/Seoul':'KR',
+    'Asia/Singapore':'SG','Asia/Kuala_Lumpur':'MY','Asia/Bangkok':'TH','Asia/Jakarta':'ID','Asia/Manila':'PH',
+    'Asia/Kolkata':'IN','Asia/Calcutta':'IN','Asia/Karachi':'PK','Asia/Dubai':'AE','Asia/Riyadh':'SA',
+    'Europe/London':'GB','Europe/Dublin':'IE','Europe/Paris':'FR','Europe/Berlin':'DE','Europe/Madrid':'ES',
+    'Europe/Rome':'IT','Europe/Amsterdam':'NL','Europe/Brussels':'BE','Europe/Vienna':'AT','Europe/Zurich':'CH',
+    'Europe/Lisbon':'PT','Europe/Stockholm':'SE','Europe/Oslo':'NO','Europe/Copenhagen':'DK','Europe/Helsinki':'FI',
+    'Europe/Warsaw':'PL','Europe/Prague':'CZ','Europe/Budapest':'HU','Europe/Athens':'GR','Europe/Moscow':'RU',
+    'America/New_York':'US','America/Chicago':'US','America/Denver':'US','America/Los_Angeles':'US',
+    'America/Toronto':'CA','America/Vancouver':'CA','America/Mexico_City':'MX','America/Sao_Paulo':'BR',
+    'America/Argentina/Buenos_Aires':'AR','Australia/Sydney':'AU','Australia/Melbourne':'AU','Pacific/Auckland':'NZ',
+    'Africa/Johannesburg':'ZA','Africa/Cairo':'EG','Africa/Lagos':'NG','Africa/Nairobi':'KE','Asia/Jerusalem':'IL',
+    'Europe/Istanbul':'TR'};
+  var LOC={'zh-cn':'CN','zh-tw':'TW','zh-hk':'HK','ja':'JP','ko':'KR','th':'TH','vi':'VN','id':'ID','ms':'MY',
+    'en-gb':'GB','en-au':'AU','en-ca':'CA','en-nz':'NZ','en-in':'IN','de':'DE','fr':'FR','es':'ES','it':'IT',
+    'pt':'PT','nl':'NL','pl':'PL','ru':'RU','tr':'TR','ar':'AE','he':'IL'};
+  function pad(n){return (n<10?'0':'')+n;}
+  function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+  function biz(hol,makeup,from,to){var n=0,d=new Date(from);while(d<=to){var k=iso(d);var wk=d.getDay()===0||d.getDay()===6;if(wk?!!makeup[k]:!hol[k])n++;d.setDate(d.getDate()+1);}return n;}
+  function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  function render(d,cc){
+    var today=new Date();today.setHours(0,0,0,0);var y=today.getFullYear();
+    var hol={},mk={};
+    (d.holidays||[]).forEach(function(x){hol[x]=1;});
+    (d.makeup||[]).forEach(function(x){mk[x]=1;});
+    var monthEnd=new Date(y,today.getMonth()+1,0),yearEnd=new Date(y,11,31),yearStart=new Date(y,0,1);
+    var monthLeft=biz(hol,mk,today,monthEnd);
+    var yearLeft=biz(hol,mk,today,yearEnd);
+    var total=biz(hol,mk,yearStart,yearEnd);
+    var pct=total?Math.round((total-yearLeft)/total*100):0;
+    setText('cd-year',yearLeft); setText('cd-month',monthLeft); setText('cd-total',total);
+    setText('cd-pct',pct+'%');
+    var fg=document.querySelector('.cd-ring .ring-fg');
+    if(fg){ fg.style.strokeDashoffset=(339.3*(1-pct/100)).toFixed(1); }
+    var keys=Object.keys(hol).sort(), next=null;
+    for(var i=0;i<keys.length;i++){ if(keys[i]>=iso(today)){ next=keys[i]; break; } }
+    if(next){ setText('cd-next',Math.round((new Date(next+'T00:00:00')-today)/86400000)); }
+    else { setText('cd-next','—'); }
+    var nameEl=document.getElementById('cd-name'); if(nameEl) nameEl.style.display='none';
+  }
+  function load(cc){
+    var year=new Date().getFullYear();
+    fetch('/api/v1/business/'+cc+'/'+year+'.json').then(function(r){return r.ok?r.json():null;}).then(function(d){
+      if(!d){ if(cc!=='US') load('US'); return; }
+      render(d,cc);
+    }).catch(function(){ if(cc!=='US') load('US'); });
+  }
+  function guess(){
+    try{var tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';if(TZ[tz])return TZ[tz];}catch(e){}
+    var l=(navigator.language||'en').toLowerCase();
+    if(LOC[l])return LOC[l];
+    var b=l.split('-')[0]; if(LOC[b])return LOC[b];
+    return 'US';
+  }
+  function supported(cc){ for(var i=0;i<COUNTRIES.length;i++) if(COUNTRIES[i].code===cc) return true; return false; }
+  function init(){
+    var defaultCc=(root.getAttribute('data-country')||'US').toUpperCase();
+    var sel=document.querySelector('[data-cd-country]');
+    var yearEl=document.getElementById('cd-year-label');
+    if(yearEl) yearEl.textContent=new Date().getFullYear();
+    fetch('/geo').then(function(r){return r.ok?r.json():null;}).then(function(g){
+      var c=((g&&g.country)||'').toUpperCase();
+      if(!c||!supported(c)) c=supported(defaultCc)?defaultCc:guess();
+      if(sel) sel.value=c;
+      load(c);
+    }).catch(function(){ load(defaultCc); });
+    function clock(){var el=document.getElementById('cd-clock'); if(!el)return;
+      try{el.textContent=new Date().toLocaleTimeString(undefined,{hour12:false});}catch(e){}
+    }
+    clock(); setInterval(clock,1000);
+    if(sel) sel.addEventListener('change',function(){ load(sel.value); });
+  }
+  init();
+})();
+"""
+
+
 def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra: str = "") -> str:
     nav = (
         '<header class="site-head"><div class="wrap head-inner">'
         f'<a class="brand" href="{base}index.html"><span class="brand-mark">◷</span>{SITE_NAME}</a>'
         f'<nav><a href="{base}index.html">Calculator</a>'
+        f'<a href="{base}countdown/index.html">Countdown</a>'
         f'<a href="{base}index.html#countries">Countries</a>'
         f'<a href="{base}api/index.html">API</a>'
         f'<a href="{base}about/index.html">About</a></nav>'
@@ -513,6 +621,95 @@ def main() -> int:
                 }, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
+
+    # countdown page (auto-located remaining business days)
+    def biz_between(cc: str, start: date, end: date) -> int:
+        n = 0
+        d = start
+        while d <= end:
+            wk = d.weekday() >= 5
+            h = public.get((cc, d.year), set())
+            m = makeup.get((cc, d.year), set())
+            if (m and d in m) or (not wk and d not in h):
+                n += 1
+            d += timedelta(days=1)
+        return n
+
+    today_d = date.today()
+    data_years = sorted({y for (_c, y) in public.keys()})
+    static_year = today_d.year if today_d.year in data_years else (data_years[-1] if data_years else today_d.year)
+    static_cc = "US" if "US" in {c["code"] for c in countries} else countries[0]["code"]
+    if static_year != today_d.year:
+        static_start = date(static_year, 1, 1)
+        static_end = date(static_year, 12, 31)
+    else:
+        static_start = today_d
+        static_end = date(static_year, 12, 31)
+    static_total = biz_between(static_cc, date(static_year, 1, 1), date(static_year, 12, 31))
+    static_left = biz_between(static_cc, static_start, static_end)
+    static_month_left = biz_between(static_cc, today_d, date(today_d.year, today_d.month + 1, 1) - timedelta(days=1)) if today_d.month < 12 else biz_between(static_cc, today_d, date(today_d.year, 12, 31))
+    static_done = static_total - static_left
+    static_pct = round(static_done / static_total * 100) if static_total else 0
+    next_hol = None
+    for d in sorted(public.get((static_cc, static_year), set())):
+        if d >= today_d:
+            next_hol = d
+            break
+    next_days = (next_hol - today_d).days if next_hol else None
+
+    country_options = "".join(
+        f'<option value="{c["code"]}"{" selected" if c["code"] == static_cc else ""}>{c["name"]}</option>'
+        for c in countries
+    )
+    cd_body = (
+        '<section class="cd-hero" id="hk-countdown" data-country="' + static_cc + '">'
+        '<p class="eyebrow">Live business-day countdown</p>'
+        f'<h1>Business days left in <span id="cd-year-label">{static_year}</span></h1>'
+        '<p class="lede">Detected automatically from your location. Counts working days only — weekends and '
+        "public holidays excluded (China's 补班 counted as working days).</p>"
+        '<div class="cd-wrap">'
+        '<div class="cd-ring" aria-hidden="true">'
+        '<svg viewBox="0 0 120 120"><circle class="ring-bg" cx="60" cy="60" r="54"></circle>'
+        '<circle class="ring-fg" cx="60" cy="60" r="54"></circle></svg>'
+        '<div class="cd-ring-mid"><div class="cd-big" id="cd-year">' + str(static_left) + '</div>'
+        '<span>business days left</span></div></div>'
+        '<div class="cd-tiles">'
+        '<div class="cd-tile"><div class="v" id="cd-month">' + str(static_month_left) + '</div>'
+        '<div class="k">business days left this month</div></div>'
+        '<div class="cd-tile"><div class="v" id="cd-next">' + (str(next_days) if next_days is not None else "—") + '</div>'
+        '<div class="k">days until next public holiday</div></div>'
+        '<div class="cd-tile"><div class="v" id="cd-total">' + str(static_total) + '</div>'
+        '<div class="k">business days this year</div></div>'
+        '<div class="cd-tile"><div class="v"><span class="dot-live"></span><span id="cd-clock">--:--:--</span></div>'
+        '<div class="k">your local time</div></div>'
+        "</div></div>"
+        '<div class="cd-country"><label>Country <select data-cd-country>' + country_options + "</select></label>"
+        '<span><strong id="cd-pct">' + str(static_pct) + '%</strong> of the year\'s business days done</span></div>'
+        '<p class="cd-note">Location detected via Cloudflare edge geolocation · '
+        '<a href="../index.html">business days calculator</a> · <a href="../about/index.html">about</a></p>'
+        "</section>"
+        '<section class="sec"><h2>What this counts</h2>'
+        "<p>Remaining business days = weekdays left in the year minus public holidays, plus China's make-up "
+        "workdays (补班). The ring shows how much of the year's working time has already passed.</p>"
+        '<div class="callout">Use it for sprint planning, payroll cut-offs, SLA deadlines and year-end delivery '
+        "estimates.</div></section>"
+        '<section class="sec"><h2>FAQ</h2><dl class="faq">'
+        "<dt>Why does the number change when I switch country?</dt><dd>Each country has a different set of public "
+        "holidays, so its remaining business days differ.</dd>"
+        "<dt>How is my location detected?</dt><dd>Cloudflare's edge geolocation tells us your country; if the "
+        "country is unsupported we fall back to your timezone or browser language.</dd>"
+        "<dt>Does it update automatically?</dt><dd>Yes — the countdown recalculates on load and the clock ticks "
+        "every second.</dd></dl></section>"
+    )
+    (out / "countdown").mkdir(exist_ok=True)
+    wkdata = "<script>window.WK=" + json.dumps({"countries": countries, "years": YEARS}) + ";</script>"
+    (out / "countdown" / "index.html").write_text(
+        page("Business Days Left in " + str(static_year) + " — Live Countdown",
+             "Live countdown of remaining business days in the year, auto-detected for your country. Weekends and public holidays excluded.",
+             f"{site_url}/countdown/", cd_body, extra=wkdata + "<script>" + COUNTDOWN_JS + "</script>"),
+        encoding="utf-8",
+    )
+    urls.append("countdown/")
 
     # API docs / about / privacy
     api_body = (
