@@ -1222,7 +1222,11 @@ def main() -> int:
         "<li><code>monthly</code> — business days per month</li>"
         "<li><code>holidays</code> — public holiday dates to exclude</li>"
         "<li><code>makeup</code> — China 补班 workdays counted as business days</li>"
+        "<li>Rate limit: 240 requests/minute per IP; over the limit returns HTTP 429 with "
+        "<code>Retry-After</code>. Responses are cacheable for a day.</li>"
         "</ul></section>"
+        '<section class="sec"><h2>Support</h2><p>Free under a generous fair-use policy. '
+        'Commercial or high-volume use? See <a href="../support/index.html">Support</a>.</p></section>'
     )
     (out / "api").mkdir(exist_ok=True)
     (out / "api" / "index.html").write_text(
