@@ -192,6 +192,18 @@ COUNTDOWN_JS = """
   function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
   function biz(hol,makeup,from,to){var n=0,d=new Date(from);while(d<=to){var k=iso(d);var wk=d.getDay()===0||d.getDay()===6;if(wk?!!makeup[k]:!hol[k])n++;d.setDate(d.getDate()+1);}return n;}
   function setText(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+  var MONB=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function updateBars(mo){
+    var bars=document.querySelectorAll('#cd-bars .bz'); if(!bars.length) return;
+    var vals=[];
+    for(var i=0;i<12;i++){ vals.push(mo&&mo[MONB[i]]!=null?mo[MONB[i]]:0); }
+    var lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals), rng=Math.max(hi-lo,1);
+    for(var j=0;j<bars.length;j++){
+      var h=Math.round(20+(vals[j]-lo)/rng*66);
+      bars[j].style.height=h+'%';
+      var b=bars[j].querySelector('b'); if(b) b.textContent=vals[j];
+    }
+  }
   function render(d,cc){
     var today=new Date();today.setHours(0,0,0,0);var y=today.getFullYear();
     var hol={},mk={};
@@ -204,6 +216,7 @@ COUNTDOWN_JS = """
     var pct=total?Math.round((total-yearLeft)/total*100):0;
     setText('cd-year',yearLeft); setText('cd-month',monthLeft); setText('cd-total',total);
     setText('cd-pct',pct+'%');
+    updateBars(d.monthly);
     var fg=document.querySelector('[data-cd-ring]');
     if(fg){ fg.style.setProperty('--p', pct); }
     var keys=Object.keys(hol).sort(), next=null;
@@ -391,6 +404,24 @@ SHARE_CSS = """
 .share-plat{border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:999px;padding:7px 14px;font-size:.8rem;cursor:pointer;transition:all .18s}
 .share-plat:hover{border-color:var(--ink);transform:translateY(-1px)}
 .share-hint{font-size:.72rem;color:var(--muted);margin:10px 0 0;line-height:1.5}
+/* prominent share CTA + floating button */
+.btn-share-hot{position:relative;display:inline-flex;align-items:center;gap:9px;border:0;cursor:pointer;font-weight:700;font-size:.95rem;padding:14px 24px;border-radius:999px;color:#04231a;background:linear-gradient(100deg,#34d399,#22d3ee,#a78bfa,#34d399);background-size:280% 100%;animation:wkhotgrad 7s linear infinite;box-shadow:0 12px 32px rgba(34,211,238,.32),0 0 0 1px rgba(255,255,255,.28) inset;transition:transform .18s,box-shadow .18s}
+.btn-share-hot:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 18px 42px rgba(34,211,238,.42)}
+@keyframes wkhotgrad{to{background-position:280% 50%}}
+.share-fab{position:fixed;right:20px;bottom:100px;z-index:70;display:inline-flex;align-items:center;gap:9px;padding:12px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.35);cursor:pointer;color:#04231a;font-weight:800;font-size:.86rem;background:linear-gradient(120deg,#34d399,#22d3ee);box-shadow:0 12px 30px rgba(34,211,238,.38);animation:wkfabpulse 2.8s ease-in-out infinite;transition:transform .18s}
+.share-fab:hover{transform:translateY(-3px) scale(1.04)}
+.share-fab .sf-ic{width:22px;height:22px;display:grid;place-items:center;border-radius:7px;background:rgba(255,255,255,.4);font-size:.95rem;line-height:1}
+@keyframes wkfabpulse{0%,100%{box-shadow:0 12px 30px rgba(34,211,238,.38),0 0 0 0 rgba(52,211,153,.5)}50%{box-shadow:0 12px 30px rgba(34,211,238,.38),0 0 0 15px rgba(52,211,153,0)}}
+@media (max-width:720px){.share-fab{right:12px;bottom:78px;padding:10px 14px;font-size:.8rem}.btn-share-hot{padding:12px 18px;font-size:.88rem}}
+/* monthly business-day bars */
+.vz-wrap{margin:20px 0 4px}
+.vz-bars{display:flex;align-items:flex-end;gap:6px;height:130px;padding:10px 6px 6px;border-radius:14px;background:linear-gradient(180deg,rgba(52,211,153,.08),rgba(52,211,153,0));border:1px solid var(--line)}
+.vz-bars .bz{flex:1;position:relative;height:2px;min-height:2px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#34d399,#0ea5e9);transform-origin:bottom;animation:vzGrow .95s cubic-bezier(.2,.75,.25,1) both}
+.vz-bars .bz b{position:absolute;top:-17px;left:0;right:0;text-align:center;font-size:.62rem;color:var(--muted);font-weight:600}
+@keyframes vzGrow{from{transform:scaleY(.02)}to{transform:scaleY(1)}}
+.vz-x{display:flex;gap:6px;margin-top:6px}
+.vz-x span{flex:1;text-align:center;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+@media (prefers-reduced-motion:reduce){.vz-bars .bz{animation:none}}
 """
 
 
@@ -532,6 +563,17 @@ SHARE_JS = r"""
   function open(){ensure().classList.add('on');draw();detectCountry();renderPlatforms();}
   qrImg=new Image();qrImg.onload=function(){st.qr=qrImg;if(modal)draw();};qrImg.src=D.qr;
   document.querySelectorAll('[data-share-open]').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();open();});});
+  // floating, always-visible share CTA
+  (function(){
+    if(document.querySelector('.share-fab')) return;
+    var lang=(document.documentElement.lang||'en').slice(0,2);
+    var TXT={zh:'分享卡片',ja:'共有カード',ko:'공유 카드',es:'Compartir',fr:'Partager',de:'Teilen'};
+    var fab=document.createElement('button');
+    fab.type='button'; fab.className='share-fab'; fab.setAttribute('aria-label','Share card');
+    fab.innerHTML='<span class="sf-ic" aria-hidden="true">✨</span><span class="sf-txt">'+(TXT[lang]||'Share card')+'</span>';
+    fab.addEventListener('click', function(){ open(); });
+    document.body.appendChild(fab);
+  })();
   window.WK_SHARE_REFRESH=function(){if(modal&&modal.classList.contains('on'))draw();};
   if(new URLSearchParams(location.search).has('share')){window.addEventListener('load',open);}
 })();
@@ -966,6 +1008,20 @@ def main() -> int:
             break
     next_days = (next_hol - today_d).days if next_hol else None
 
+    static_monthly = []
+    for _m in range(1, 13):
+        _ms = date(static_year, _m, 1)
+        _me = (date(static_year + 1, 1, 1) if _m == 12 else date(static_year, _m + 1, 1)) - timedelta(days=1)
+        static_monthly.append(biz_between(static_cc, _ms, _me))
+    _lo, _hi = min(static_monthly), max(static_monthly)
+    _rng = max(_hi - _lo, 1)
+    cd_bars = "".join(
+        f'<div class="bz" data-m="{_i}" style="height:{round(20 + (v - _lo) / _rng * 66)}%">'
+        f"<b>{v}</b></div>"
+        for _i, v in enumerate(static_monthly)
+    )
+    cd_bar_labels = '<div class="vz-x">' + "".join(f"<span>{m}</span>" for m in MONTHS) + "</div>"
+
     country_options = "".join(
         f'<option value="{c["code"]}"{" selected" if c["code"] == static_cc else ""}>{c["name"]}</option>'
         for c in countries
@@ -992,10 +1048,12 @@ def main() -> int:
         "</div></div>"
         '<div class="cd-country"><label>Country <select data-cd-country>' + country_options + "</select></label>"
         '<span><strong id="cd-pct">' + str(static_pct) + '%</strong> <span data-i18n="cd.pct">of the year\'s business days done</span></span></div>'
+        '<div class="vz-wrap"><h3>Business days by month</h3>'
+        '<div class="vz-bars" id="cd-bars">' + cd_bars + "</div>" + cd_bar_labels + "</div>"
         '<p class="cd-note">Location detected via Cloudflare edge geolocation · '
         '<a href="../index.html">business days calculator</a> · <a href="../about/index.html">about</a></p>'
-        '<p style="margin-top:18px"><button type="button" class="btn ghost" data-share-open>'
-        '分享卡片 / Share card</button></p>'
+        '<p style="margin-top:18px"><button type="button" class="btn-share-hot" data-share-open>'
+        '<span aria-hidden="true">✨</span> 生成分享卡片 · Share card</button></p>'
         "</section>"
         '<section class="sec"><h2 data-i18n="cd.what">What this counts</h2>'
         "<p>Remaining business days = weekdays left in the year minus public holidays, plus China's make-up "
