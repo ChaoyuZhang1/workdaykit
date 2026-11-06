@@ -65,6 +65,8 @@ h1{font-family:var(--font-display);font-size:clamp(2rem,4.6vw,3.2rem);line-heigh
 .calc input,.calc select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:.92rem;background:var(--surface);color:var(--ink)}
 .calc-result{margin-top:16px}
 .result-card{background:var(--soft);border-radius:12px;padding:16px 18px}
+.result-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.result-actions .btn{padding:8px 16px;font-size:.84rem}
 .result-num{font-family:var(--font-display);font-size:2.4rem;line-height:1;color:var(--accent)}
 .result-num span{font-size:.9rem;color:var(--muted);font-family:var(--font-body);margin-left:8px}
 .result-detail{color:var(--muted);font-size:.88rem;margin-top:8px}
@@ -263,6 +265,25 @@ CALC_JS = """
     return { date: d, skipped: skipped };
   }
   function render(html){ $('[data-result]').innerHTML = html; }
+  function icsFor(dateStr, title){
+    var d = new Date(dateStr + 'T00:00:00');
+    var next = new Date(d.getTime() + 86400000);
+    function p2(n){ return (n < 10 ? '0' : '') + n; }
+    function ymd(x){ return x.getFullYear() + p2(x.getMonth() + 1) + p2(x.getDate()); }
+    return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//WorkdayKit//EN', 'CALSCALE:GREGORIAN',
+      'BEGIN:VEVENT', 'UID:' + ymd(d) + '-' + Math.random().toString(36).slice(2) + '@workdaykit',
+      'DTSTAMP:' + ymd(d) + 'T000000Z', 'DTSTART;VALUE=DATE:' + ymd(d), 'DTEND;VALUE=DATE:' + ymd(next),
+      'SUMMARY:' + (title || 'Business day'), 'TRANSP:TRANSPARENT', 'END:VEVENT', 'END:VCALENDAR'
+    ].join('\r\n');
+  }
+  function downloadIcs(dateStr, title){
+    var blob = new Blob([icsFor(dateStr, title)], { type: 'text/calendar;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'workdaykit-' + dateStr + '.ics';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 600);
+  }
   function setMode(m){
     mode = m;
     root.querySelectorAll('[data-mode]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-mode')===m); });
@@ -283,7 +304,9 @@ CALC_JS = """
         var r = countBetween(s, e, data);
         render('<div class="result-card"><div class="result-num">' + r.business + '<span>business days</span></div>' +
           '<div class="result-detail">' + fmt(s) + ' → ' + fmt(e) + ' · ' + r.total + ' calendar days · ' +
-          r.weekend + ' weekend days · ' + r.holidays + ' public holidays</div></div>');
+          r.weekend + ' weekend days · ' + r.holidays + ' public holidays</div>' +
+          '<div class="result-actions"><button type="button" class="btn ghost" data-ics="' + iso(e) +
+          '" data-ics-title="Deadline (' + r.business + ' business days)">Add deadline to calendar</button></div></div>');
       } else {
         var st = parse($('[data-add-start]').value);
         var n = parseInt($('[data-add-n]').value, 10);
@@ -291,9 +314,17 @@ CALC_JS = """
         var res = addBusiness(st, n, data);
         render('<div class="result-card"><div class="result-num">' + fmt(res.date) + '</div>' +
           '<div class="result-detail">' + (n >= 0 ? '+' : '') + n + ' business days from ' + fmt(st) +
-          (res.skipped.length ? ' · skipped ' + res.skipped.length + ' holiday(s)' : '') + '</div></div>');
+          (res.skipped.length ? ' · skipped ' + res.skipped.length + ' holiday(s)' : '') + '</div>' +
+          '<div class="result-actions"><button type="button" class="btn ghost" data-ics="' +
+          iso(res.date) + '" data-ics-title="' + n + ' business days from ' + fmt(st).replace(/"/g, '') +
+          '">Add result to calendar</button></div></div>');
       }
     });
+  });
+  root.addEventListener('click', function(e){
+    var btn = e.target && e.target.closest ? e.target.closest('[data-ics]') : null;
+    if (!btn) return;
+    downloadIcs(btn.getAttribute('data-ics'), btn.getAttribute('data-ics-title') || 'Business day');
   });
   setMode('between');
 })();
