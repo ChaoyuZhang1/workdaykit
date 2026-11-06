@@ -130,6 +130,9 @@ tbody tr:hover{background:#faf7f0}
 .cd-tile .v{font-family:var(--font-display);font-size:1.9rem;line-height:1.05;color:#f7fbfa}
 .cd-tile .k{font-size:.72rem;color:#94a8a2;margin-top:4px;letter-spacing:.04em}
 .cd-tile .dot-live{display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;margin-right:6px;animation:cdpulse 1.8s infinite}
+.cd-ico{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:.88rem;line-height:1;margin-bottom:10px}
+.cd-note{font-size:.76rem;color:#94a8a2;margin:14px 0 0;line-height:1.6;max-width:70ch}
+.cd-note b{color:#d7e5df;font-weight:600}
 @keyframes cdpulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.5)}70%{box-shadow:0 0 0 7px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
 .cd-country{display:flex;gap:10px;align-items:center;margin-top:20px;color:#b9c6c2;font-size:.86rem;flex-wrap:wrap}
 .cd-country select{background:rgba(255,255,255,.08);color:#eef4f2;border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:8px 12px;font-size:.86rem}
@@ -990,7 +993,7 @@ def main() -> int:
         + '<section class="sec"><h2 data-i18n="home.countries">Business days by country</h2>'
         '<p class="sub" data-i18n="home.countries.sub">How many business days are left this year, country by country.</p>'
         '<div class="grid">' + "".join(cards) + "</div></section>"
-        '<section class="ad">[Ad slot]</section>'
+        '<span hidden></span>'
         '<section class="sec"><h2 data-i18n="home.how">How it works</h2>'
         "<p>Pick a country and year, then either count the business days between two dates or add/subtract a number "
         "of business days. The calculator loads that country's public holidays and excludes them. Weekends are "
@@ -1145,28 +1148,31 @@ def main() -> int:
         '<section class="cd-hero" id="hk-countdown" data-country="' + static_cc + '">'
         '<p class="eyebrow" data-i18n="cd.eyebrow">Live business-day countdown</p>'
         f'<h1><span data-i18n="home.countdown">Business days left this year</span> <span id="cd-year-label">{static_year}</span></h1>'
-        '<p class="lede" data-i18n="cd.lede">Detected automatically from your location. Counts working days only — weekends and '
-        "public holidays excluded (China's 补班 counted as working days).</p>"
         '<div class="cd-wrap">'
         '<div class="cd-ring" data-cd-ring style="--p:' + str(static_pct) + '">'
         '<div class="cd-ring-mid"><div class="cd-big" id="cd-year">' + str(static_left) + '</div>'
         '<span data-i18n="cd.left">business days left</span></div></div>'
         '<div class="cd-tiles">'
-        '<div class="cd-tile"><div class="v" id="cd-month">' + str(static_month_left) + '</div>'
+        '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">📅</span>'
+        '<div class="v" id="cd-month">' + str(static_month_left) + '</div>'
         '<div class="k" data-i18n="cd.month">business days left this month</div></div>'
-        '<div class="cd-tile"><div class="v" id="cd-next">' + (str(next_days) if next_days is not None else "—") + '</div>'
+        '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">🎯</span>'
+        '<div class="v" id="cd-next">' + (str(next_days) if next_days is not None else "—") + '</div>'
         '<div class="k" data-i18n="cd.next">days until next public holiday</div></div>'
-        '<div class="cd-tile"><div class="v" id="cd-total">' + str(static_total) + '</div>'
+        '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">🗓️</span>'
+        '<div class="v" id="cd-total">' + str(static_total) + '</div>'
         '<div class="k" data-i18n="cd.total">business days this year</div></div>'
-        '<div class="cd-tile"><div class="v"><span class="dot-live"></span><span id="cd-clock">--:--:--</span></div>'
+        '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">⏱️</span>'
+        '<div class="v"><span class="dot-live"></span><span id="cd-clock">--:--:--</span></div>'
         '<div class="k" data-i18n="cd.clock">your local time</div></div>'
         "</div></div>"
         '<div class="cd-country"><label>Country <select data-cd-country>' + country_options + "</select></label>"
         '<span><strong id="cd-pct">' + str(static_pct) + '%</strong> <span data-i18n="cd.pct">of the year\'s business days done</span></span></div>'
-        '<div class="vz-wrap"><h3>Business days by month</h3>'
+        '<div class="vz-wrap"><h3>📊 Business days by month</h3>'
         '<div class="vz-bars" id="cd-bars">' + cd_bars + "</div>" + cd_bar_labels + "</div>"
-        '<p class="cd-note">Location detected via Cloudflare edge geolocation · '
-        '<a href="../index.html">business days calculator</a> · <a href="../about/index.html">about</a></p>'
+        '<p class="cd-note" data-i18n="cd.lede">Auto-detected from your location — change the country above to '
+        "recalculate. Counts working days only: weekends and public holidays are excluded (China's 补班 counted "
+        "as working days).</p>"
         '<p style="margin-top:18px"><button type="button" class="btn-share-hot" data-share-open>'
         '<span aria-hidden="true">✨</span> 生成分享卡片 · Share card</button></p>'
         "</section>"
