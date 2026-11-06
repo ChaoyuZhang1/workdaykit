@@ -262,7 +262,7 @@ I18N_JS = """
       'calc.addcal':'Add to calendar','home.countries':'Business days by country','home.countdown':'Business days left this year',
       'home.countdown.sub':'A live countdown of how many working days remain — auto-detected for your country.',
       'home.how':'How it works','home.faq':'FAQ',
-      'cd.eyebrow':'Live business-day countdown','cd.left':'business days left','cd.month':'business days left this month',
+      'cd.eyebrow':'Live business-day countdown','cd.lede':'Detected automatically from your location. Counts working days only — weekends and public holidays excluded.','cd.what':'What this counts','cd.left':'business days left','cd.month':'business days left this month',
       'cd.next':'days until next public holiday','cd.total':'business days this year','cd.clock':'your local time',
       'cd.pct':'of the year\\'s business days done','foot.note':'Count business days between dates, skip weekends and holidays.'},
     zh:{'nav.calc':'计算器','nav.cd':'倒计时','nav.countries':'国家','nav.api':'API','nav.about':'关于',
@@ -272,7 +272,7 @@ I18N_JS = """
       'calc.addcal':'加入日历','home.countries':'按国家查看工作日','home.countdown':'今年还剩多少工作日',
       'home.countdown.sub':'实时倒计时，按你的位置自动识别国家。',
       'home.how':'怎么用','home.faq':'常见问题',
-      'cd.eyebrow':'实时工作日倒计时','cd.left':'个工作日剩余','cd.month':'本月剩余工作日',
+      'cd.eyebrow':'实时工作日倒计时','cd.lede':'根据你的位置自动识别，只计算工作日——排除周末与公共假期（中国补班计入工作日）。','cd.what':'这个数字怎么算的','cd.left':'个工作日剩余','cd.month':'本月剩余工作日',
       'cd.next':'距离下一个公共假期','cd.total':'今年工作日总数','cd.clock':'你的当地时间',
       'cd.pct':'今年工作日已完成','foot.note':'计算工作日，自动跳过周末和假期。'},
     ja:{'nav.calc':'計算機','nav.cd':'カウントダウン','nav.countries':'国','nav.api':'API','nav.about':'概要',
@@ -282,7 +282,7 @@ I18N_JS = """
       'calc.addcal':'カレンダーに追加','home.countries':'国別の営業日','home.countdown':'今年の残り営業日',
       'home.countdown.sub':'現在地から自動判定した残り営業日のライブカウントダウン。',
       'home.how':'使い方','home.faq':'FAQ',
-      'cd.eyebrow':'営業日ライブカウントダウン','cd.left':'営業日残り','cd.month':'今月の残り営業日',
+      'cd.eyebrow':'営業日ライブカウントダウン','cd.lede':'現在地から自動判定。営業日のみを数え、週末と祝日を除外します。','cd.what':'この数字の計算方法','cd.left':'営業日残り','cd.month':'今月の残り営業日',
       'cd.next':'次の祝日まで','cd.total':'今年の営業日','cd.clock':'現地時刻',
       'cd.pct':'今年の営業日消化率','foot.note':'週末と祝日を除いた営業日を計算。'},
     ko:{'nav.calc':'계산기','nav.cd':'카운트다운','nav.countries':'국가','nav.api':'API','nav.about':'소개',
@@ -292,7 +292,7 @@ I18N_JS = """
       'calc.addcal':'캘린더에 추가','home.countries':'국가별 영업일','home.countdown':'올해 남은 영업일',
       'home.countdown.sub':'위치 기반으로 자동 인식한 남은 영업일 실시간 카운트다운.',
       'home.how':'사용법','home.faq':'자주 묻는 질문',
-      'cd.eyebrow':'실시간 영업일 카운트다운','cd.left':'영업일 남음','cd.month':'이번 달 남은 영업일',
+      'cd.eyebrow':'실시간 영업일 카운트다운','cd.lede':'위치를 자동 감지해 영업일만 계산합니다. 주말과 공휴일은 제외합니다.','cd.what':'계산 방식','cd.left':'영업일 남음','cd.month':'이번 달 남은 영업일',
       'cd.next':'다음 공휴일까지','cd.total':'올해 영업일','cd.clock':'현지 시간',
       'cd.pct':'올해 영업일 진행률','foot.note':'주말과 공휴일을 제외한 영업일 계산.'},
     es:{'nav.calc':'Calculadora','nav.cd':'Cuenta atrás','nav.countries':'Países','nav.api':'API','nav.about':'Acerca de',
@@ -302,7 +302,7 @@ I18N_JS = """
       'calc.addcal':'Añadir al calendario','home.countries':'Días laborables por país','home.countdown':'Días laborables que quedan este año',
       'home.countdown.sub':'Cuenta atrás en vivo de días laborables restantes, detectada por tu ubicación.',
       'home.how':'Cómo funciona','home.faq':'Preguntas frecuentes',
-      'cd.eyebrow':'Cuenta atrás de días laborables','cd.left':'días laborables restantes','cd.month':'días laborables este mes',
+      'cd.eyebrow':'Cuenta atrás de días laborables','cd.lede':'Detectado automáticamente por tu ubicación. Solo cuenta días laborables, sin fines de semana ni festivos.','cd.what':'Cómo se calcula','cd.left':'días laborables restantes','cd.month':'días laborables este mes',
       'cd.next':'días hasta el próximo festivo','cd.total':'días laborables este año','cd.clock':'tu hora local',
       'cd.pct':'del año laboral completado','foot.note':'Calcula días laborables sin fines de semana ni festivos.'},
     fr:{'nav.calc':'Calculateur','nav.cd':'Compte à rebours','nav.countries':'Pays','nav.api':'API','nav.about':'À propos',
@@ -312,7 +312,7 @@ I18N_JS = """
       'calc.addcal':'Ajouter au calendrier','home.countries':'Jours ouvrés par pays','home.countdown':'Jours ouvrés restants cette année',
       'home.countdown.sub':'Compte à rebours en direct des jours ouvrés restants, détecté selon votre position.',
       'home.how':'Comment ça marche','home.faq':'FAQ',
-      'cd.eyebrow':'Compte à rebours des jours ouvrés','cd.left':'jours ouvrés restants','cd.month':'jours ouvrés ce mois',
+      'cd.eyebrow':'Compte à rebours des jours ouvrés','cd.lede':'Détecté selon votre position. Compte uniquement les jours ouvrés, hors week-ends et fériés.','cd.what':'Comment est calculé ce nombre','cd.left':'jours ouvrés restants','cd.month':'jours ouvrés ce mois',
       'cd.next':'jours avant le prochain férié','cd.total':'jours ouvrés cette année','cd.clock':'votre heure locale',
       'cd.pct':'de l\\'année ouvrée écoulée','foot.note':'Compte les jours ouvrés hors week-ends et fériés.'},
     de:{'nav.calc':'Rechner','nav.cd':'Countdown','nav.countries':'Länder','nav.api':'API','nav.about':'Über',
@@ -322,7 +322,7 @@ I18N_JS = """
       'calc.addcal':'Zum Kalender','home.countries':'Werktage nach Land','home.countdown':'Restliche Werktage dieses Jahr',
       'home.countdown.sub':'Live-Countdown der verbleibenden Werktage, automatisch nach Standort.',
       'home.how':'So funktioniert es','home.faq':'FAQ',
-      'cd.eyebrow':'Live-Werktage-Countdown','cd.left':'Werktage übrig','cd.month':'Werktage diesen Monat übrig',
+      'cd.eyebrow':'Live-Werktage-Countdown','cd.lede':'Automatisch nach Standort erkannt. Zählt nur Werktage, ohne Wochenenden und Feiertage.','cd.what':'So wird gerechnet','cd.left':'Werktage übrig','cd.month':'Werktage diesen Monat übrig',
       'cd.next':'Tage bis zum nächsten Feiertag','cd.total':'Werktage dieses Jahr','cd.clock':'Ihre Ortszeit',
       'cd.pct':'des Arbeitsjahres erledigt','foot.note':'Werktage ohne Wochenenden und Feiertage zählen.'}
   };
@@ -339,6 +339,7 @@ I18N_JS = """
     document.documentElement.lang=lang;
     document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent=t(el.getAttribute('data-i18n')); });
     document.querySelectorAll('[data-hk-lang]').forEach(function(s){ s.value=lang; });
+    document.dispatchEvent(new CustomEvent('hk-lang-changed'));
   }
   function set(l){ if(!D[l]) return; lang=l; try{localStorage.setItem('wk_lang',l);}catch(e){} apply(); }
   window.HKI18N={t:t,set:set,lang:function(){return lang;},apply:apply};
@@ -808,7 +809,7 @@ def main() -> int:
         '<p class="cd-note">Location detected via Cloudflare edge geolocation · '
         '<a href="../index.html">business days calculator</a> · <a href="../about/index.html">about</a></p>'
         "</section>"
-        '<section class="sec"><h2>What this counts</h2>'
+        '<section class="sec"><h2 data-i18n="cd.what">What this counts</h2>'
         "<p>Remaining business days = weekdays left in the year minus public holidays, plus China's make-up "
         "workdays (补班). The ring shows how much of the year's working time has already passed.</p>"
         '<div class="callout">Use it for sprint planning, payroll cut-offs, SLA deadlines and year-end delivery '
