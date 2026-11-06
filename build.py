@@ -18,6 +18,11 @@ import sys
 from datetime import date, timedelta
 from pathlib import Path
 
+try:
+    import qrcode  # type: ignore
+except ImportError:  # pragma: no cover
+    qrcode = None
+
 ROOT = Path(__file__).resolve().parent
 HK = ROOT.parent / "holiday-kit"
 sys.path.insert(0, str(HK / "scripts"))
@@ -209,11 +214,22 @@ COUNTDOWN_JS = """
       fetch('/api/v1/business/'+cc+'/'+(y+1)+'.json').then(function(r){return r.ok?r.json():null;}).then(function(nd){
         if(nd&&nd.holidays&&nd.holidays.length){
           var h=nd.holidays.slice().sort()[0];
-          setText('cd-next',Math.round((new Date(h+'T00:00:00')-today)/86400000));
+          var ndays=Math.round((new Date(h+'T00:00:00')-today)/86400000);
+          setText('cd-next',ndays);
+          if(window.WK_SHARE){ window.WK_SHARE.next=ndays; if(window.WK_SHARE_REFRESH) window.WK_SHARE_REFRESH(); }
         }
       }).catch(function(){});
     }
-    var nameEl=document.getElementById('cd-name'); if(nameEl) nameEl.style.display='none';
+    if(window.WK_SHARE){
+      var nm=(COUNTRIES.filter(function(x){return x.code===cc;})[0]||{}).name||cc;
+      window.WK_SHARE.country=nm;
+      window.WK_SHARE.yearLeft=yearLeft;
+      window.WK_SHARE.monthLeft=monthLeft;
+      window.WK_SHARE.total=total;
+      window.WK_SHARE.pct=pct;
+      window.WK_SHARE.next=(next?Math.round((new Date(next+'T00:00:00')-today)/86400000):'—');
+      if(window.WK_SHARE_REFRESH) window.WK_SHARE_REFRESH();
+    }
   }
   function load(cc){
     var year=new Date().getFullYear();
@@ -359,6 +375,109 @@ I18N_JS = """
 """
 
 
+SHARE_CSS = """
+.share-modal{position:fixed;inset:0;z-index:80;background:rgba(12,16,22,.62);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px}
+.share-modal.on{display:flex}
+.share-panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;max-width:min(780px,96vw);max-height:94vh;overflow:auto;box-shadow:0 30px 80px rgba(15,17,21,.35)}
+.share-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:.95rem}
+.share-close{border:1px solid var(--line);background:var(--surface);width:32px;height:32px;border-radius:10px;cursor:pointer;font-size:1rem;line-height:1}
+.share-canvas{display:block;width:100%;max-height:52vh;height:auto;border-radius:12px;background:#111;margin:0 auto}
+.share-controls{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}
+.share-controls label{font-size:.72rem;color:var(--muted);display:flex;flex-direction:column;gap:4px;text-transform:uppercase;letter-spacing:.06em}
+.share-controls select{padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);font-size:.85rem;text-transform:none}
+.share-btns{display:flex;gap:8px;flex-wrap:wrap}
+.share-btns .btn{padding:9px 16px;font-size:.85rem}
+"""
+
+
+SHARE_JS = r"""
+(function(){
+  var D=window.WK_SHARE; if(!D) return;
+  var TPL={
+    aurora:{bg:['#0c211c','#0a1420'],ink:'#eef7f2',sub:'#9fb8ae',accent:'#34d399',cell:'rgba(255,255,255,.06)',line:'rgba(255,255,255,.14)'},
+    paper:{bg:['#f8f3e8','#efe5d2'],ink:'#1d1a16',sub:'#6f6557',accent:'#b5731a',cell:'rgba(255,255,255,.55)',line:'rgba(29,26,22,.14)'},
+    neon:{bg:['#050809','#0a1411'],ink:'#eafff3',sub:'#7fd6a5',accent:'#7cffb2',cell:'rgba(124,255,178,.08)',line:'rgba(124,255,178,.28)'},
+    bloom:{bg:['#ffe9f0','#e8efff'],ink:'#2b2540',sub:'#6b6280',accent:'#7c5cff',cell:'rgba(255,255,255,.62)',line:'rgba(43,37,64,.14)'}
+  };
+  var SIZES={story:[1080,1350],square:[1080,1080],wide:[1600,900]};
+  var st={tpl:'aurora',size:'story',qr:null};
+  var canvas=null,modal=null,qrImg=null;
+  function px(n){return Math.round(n);}
+  function rr(ctx,x,y,w,h,r){var q=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+q,y);ctx.arcTo(x+w,y,x+w,y+h,q);ctx.arcTo(x+w,y+h,x,y+h,q);ctx.arcTo(x,y+h,x,y,q);ctx.arcTo(x,y,x+w,y,q);ctx.closePath();}
+  function draw(){
+    if(!canvas)return;
+    var S=SIZES[st.size],W=S[0],H=S[1];canvas.width=W;canvas.height=H;
+    var ctx=canvas.getContext('2d'),t=TPL[st.tpl];
+    var g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,t.bg[0]);g.addColorStop(1,t.bg[1]);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    var P=px(W*0.06);
+    ctx.fillStyle=t.ink;ctx.font='700 '+px(W*0.034)+'px Georgia,serif';ctx.fillText('WorkdayKit',P,px(H*0.085));
+    ctx.fillStyle=t.sub;ctx.font='400 '+px(W*0.016)+'px system-ui';ctx.fillText('Business days · countdown',P,px(H*0.115));
+    ctx.textAlign='right';ctx.fillStyle=t.accent;ctx.font='700 '+px(W*0.05)+'px Georgia,serif';ctx.fillText(String(D.year),W-P,px(H*0.095));ctx.textAlign='left';
+    ctx.fillStyle=t.ink;ctx.font='600 '+px(W*0.056)+'px Georgia,"Songti SC","Microsoft YaHei",serif';
+    ctx.fillText(D.country+' business days',P,px(H*0.19));
+    ctx.fillStyle=t.sub;ctx.font='400 '+px(W*0.022)+'px system-ui';ctx.fillText('Working days left this year',P,px(H*0.222));
+    // ring
+    var cx=W*0.25,cy=H*0.46,r=px(Math.min(W,H)*0.16);
+    ctx.lineWidth=px(W*0.028);ctx.strokeStyle=t.cell;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+    var pct=Math.max(0,Math.min(100,D.pct||0));
+    ctx.strokeStyle=t.accent;ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+Math.PI*2*pct/100);ctx.stroke();
+    ctx.fillStyle=t.ink;ctx.textAlign='center';ctx.font='700 '+px(W*0.12)+'px Georgia,serif';
+    ctx.fillText(String(D.yearLeft),cx,cy+px(W*0.025));
+    ctx.fillStyle=t.sub;ctx.font='500 '+px(W*0.014)+'px system-ui';ctx.fillText('business days left',cx,cy+px(W*0.075));
+    ctx.textAlign='left';
+    // stats
+    var sx=W*0.5, sy=H*0.36, gap=H*0.135;
+    function stat(label,val,dy){
+      ctx.fillStyle=t.sub;ctx.font='600 '+px(W*0.013)+'px system-ui';ctx.fillText(label,sx,sy+dy);
+      ctx.fillStyle=t.ink;ctx.font='700 '+px(W*0.05)+'px Georgia,serif';ctx.fillText(val,sx,sy+dy+px(H*0.05));
+    }
+    stat('business days left this month',String(D.monthLeft),0);
+    stat('days until next public holiday',String(D.next),gap);
+    stat('business days this year',String(D.total),gap*2);
+    // footer
+    var fy=px(H*0.84);
+    ctx.strokeStyle=t.line;ctx.beginPath();ctx.moveTo(P,fy);ctx.lineTo(W-P,fy);ctx.stroke();
+    ctx.fillStyle=t.ink;ctx.font='600 '+px(W*0.017)+'px system-ui';ctx.fillText('WorkdayKit',P,fy+px(H*0.035));
+    ctx.fillStyle=t.sub;ctx.font='400 '+px(W*0.0105)+'px system-ui';ctx.fillText(D.url.replace('https://',''),P,fy+px(H*0.058));
+    ctx.fillText('Scan to open the live countdown',P,fy+px(H*0.078));
+    if(st.qr){var qs=px(Math.min(W*0.105,H*0.105)),qx=W-P-qs,qy=fy+px(H*0.012);
+      ctx.fillStyle='#ffffff';rr(ctx,qx-px(W*0.006),qy-px(W*0.006),qs+px(W*0.012),qs+px(W*0.012),px(W*0.008));ctx.fill();
+      ctx.drawImage(st.qr,qx,qy,qs,qs);}
+  }
+  function ensure(){
+    if(modal)return modal;
+    var wrap=document.createElement('div');wrap.className='share-modal';
+    wrap.innerHTML='<div class="share-panel"><div class="share-head"><strong>Share card</strong>'+
+      '<button type="button" class="share-close" aria-label="Close">x</button></div>'+
+      '<canvas class="share-canvas"></canvas>'+
+      '<div class="share-controls"><label>Style<select data-share-tpl>'+Object.keys(TPL).map(function(k){return '<option value="'+k+'">'+k+'</option>';}).join('')+'</select></label>'+
+      '<label>Size<select data-share-size><option value="story">Story 4:5</option><option value="square">Square</option><option value="wide">Wide</option></select></label></div>'+
+      '<div class="share-btns"><button type="button" class="btn" data-share-dl>Download PNG</button>'+
+      '<button type="button" class="btn ghost" data-share-native>Share</button>'+
+      '<button type="button" class="btn ghost" data-share-copy>Copy image</button></div></div>';
+    document.body.appendChild(wrap);modal=wrap;canvas=wrap.querySelector('.share-canvas');
+    wrap.querySelector('.share-close').addEventListener('click',function(){wrap.classList.remove('on');});
+    wrap.addEventListener('click',function(e){if(e.target===wrap)wrap.classList.remove('on');});
+    wrap.querySelector('[data-share-tpl]').addEventListener('change',function(){st.tpl=this.value;draw();});
+    wrap.querySelector('[data-share-size]').addEventListener('change',function(){st.size=this.value;draw();});
+    wrap.querySelector('[data-share-dl]').addEventListener('click',function(){dl();});
+    wrap.querySelector('[data-share-native]').addEventListener('click',function(){nativeShare();});
+    wrap.querySelector('[data-share-copy]').addEventListener('click',function(){copy();});
+    return wrap;
+  }
+  function toBlob(cb){canvas.toBlob(function(b){cb(b);},'image/png');}
+  function dl(){toBlob(function(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='workdaykit-'+D.year+'.png';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},800);});}
+  function nativeShare(){toBlob(function(b){var f=new File([b],'workdaykit.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'WorkdayKit',text:D.country+' — '+D.yearLeft+' business days left'}).catch(function(){});}else{dl();}});}
+  function copy(){toBlob(function(b){if(navigator.clipboard&&window.ClipboardItem){navigator.clipboard.write([new ClipboardItem({'image/png':b})]).then(function(){alert('Copied image / 图片已复制');},function(){dl();});}else{dl();}});}
+  function open(){ensure().classList.add('on');draw();}
+  qrImg=new Image();qrImg.onload=function(){st.qr=qrImg;if(modal)draw();};qrImg.src=D.qr;
+  document.querySelectorAll('[data-share-open]').forEach(function(b){b.addEventListener('click',function(e){e.preventDefault();open();});});
+  window.WK_SHARE_REFRESH=function(){if(modal&&modal.classList.contains('on'))draw();};
+  if(new URLSearchParams(location.search).has('share')){window.addEventListener('load',open);}
+})();
+"""
+
+
 def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra: str = "") -> str:
     nav = (
         '<header class="site-head"><div class="wrap head-inner">'
@@ -393,7 +512,7 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         f'<link rel="canonical" href="{canonical}">'
         '<meta name="robots" content="index,follow">'
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
-        f"<style>{CSS}</style></head><body>{nav}"
+        f"<style>{CSS}{SHARE_CSS}</style></head><body>{nav}"
         f'<main class="wrap">{body}</main>{foot}'
         f"<script>{MOTION_JS}</script><script>{I18N_JS}</script>{extra}</body></html>"
     )
@@ -610,6 +729,13 @@ def main() -> int:
     if out.exists():
         shutil.rmtree(out)
     out.mkdir(parents=True)
+    qr_dir = out / "assets" / "qr"
+    qr_dir.mkdir(parents=True, exist_ok=True)
+    if qrcode is not None:
+        try:
+            qrcode.make(f"{site_url}/countdown/", box_size=4, border=1).save(qr_dir / "countdown.png")
+        except Exception:  # noqa: BLE001
+            pass
     urls: list[str] = []
 
     wk_js = (
@@ -808,6 +934,8 @@ def main() -> int:
         '<span><strong id="cd-pct">' + str(static_pct) + '%</strong> <span data-i18n="cd.pct">of the year\'s business days done</span></span></div>'
         '<p class="cd-note">Location detected via Cloudflare edge geolocation · '
         '<a href="../index.html">business days calculator</a> · <a href="../about/index.html">about</a></p>'
+        '<p style="margin-top:18px"><button type="button" class="btn ghost" data-share-open>'
+        '分享卡片 / Share card</button></p>'
         "</section>"
         '<section class="sec"><h2 data-i18n="cd.what">What this counts</h2>'
         "<p>Remaining business days = weekdays left in the year minus public holidays, plus China's make-up "
@@ -824,11 +952,26 @@ def main() -> int:
     )
     (out / "countdown").mkdir(exist_ok=True)
     wkdata = "<script>window.WK=" + json.dumps({"countries": countries, "years": YEARS}) + ";</script>"
+    static_name = next((c["name"] for c in countries if c["code"] == static_cc), static_cc)
+    wshare = {
+        "country": static_name,
+        "year": static_year,
+        "yearLeft": static_left,
+        "monthLeft": static_month_left,
+        "next": next_days if next_days is not None else "—",
+        "total": static_total,
+        "pct": static_pct,
+        "url": f"{site_url}/countdown/",
+        "qr": "/assets/qr/countdown.png",
+    }
     (out / "countdown" / "index.html").write_text(
         page("Business Days Left in " + str(static_year) + " — Live Countdown",
              "Live countdown of remaining business days in the year, auto-detected for your country. Weekends and public holidays excluded.",
              f"{site_url}/countdown/", cd_body, base="../",
-             extra=wkdata + "<script>" + COUNTDOWN_JS + "</script>"),
+             extra=wkdata
+             + "<script>" + COUNTDOWN_JS + "</script>"
+             + "<script>window.WK_SHARE=" + json.dumps(wshare, ensure_ascii=False) + ";</script>"
+             + "<script>" + SHARE_JS + "</script>"),
         encoding="utf-8",
     )
     urls.append("countdown/")
