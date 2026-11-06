@@ -288,7 +288,7 @@ I18N_JS = """
       'hero.eyebrow':'Business days · weekends · public holidays','hero.h1':'Business days calculator',
       'hero.lede':'Count working days between two dates, or add business days to a date — for 95 countries, skipping weekends and public holidays (including China\\'s 调休/补班 rules).',
       'calc.tab1':'Days between dates','calc.tab2':'Add / subtract business days','calc.calc':'Calculate',
-      'calc.addcal':'Add to calendar','home.countries':'Business days by country','home.countdown':'Business days left this year',
+      'calc.addcal':'Add to calendar','calc.country':'Country','calc.year':'Year','calc.start':'Start date','calc.end':'End date','calc.addn':'Business days (negative to subtract)','home.countries':'Business days by country','home.countries.sub':'How many business days are left this year, country by country.','home.countdown':'Business days left this year',
       'home.countdown.sub':'A live countdown of how many working days remain — auto-detected for your country.',
       'home.how':'How it works','home.faq':'FAQ',
       'cd.eyebrow':'Live business-day countdown','cd.lede':'Detected automatically from your location. Counts working days only — weekends and public holidays excluded.','cd.what':'What this counts','cd.left':'business days left','cd.month':'business days left this month',
@@ -298,7 +298,7 @@ I18N_JS = """
       'hero.eyebrow':'工作日 · 周末 · 公共假期','hero.h1':'工作日计算器',
       'hero.lede':'计算两个日期之间的工作日，或在日期上加减工作日——支持 95 个国家，自动排除周末与公共假期（含中国调休/补班）。',
       'calc.tab1':'两个日期之间','calc.tab2':'加减工作日','calc.calc':'计算',
-      'calc.addcal':'加入日历','home.countries':'按国家查看工作日','home.countdown':'今年还剩多少工作日',
+      'calc.addcal':'加入日历','calc.country':'国家','calc.year':'年份','calc.start':'开始日期','calc.end':'结束日期','calc.addn':'工作日天数（负数表示减去）','home.countries':'按国家查看工作日','home.countries.sub':'按国家查看今年还剩多少工作日。','home.countdown':'今年还剩多少工作日',
       'home.countdown.sub':'实时倒计时，按你的位置自动识别国家。',
       'home.how':'怎么用','home.faq':'常见问题',
       'cd.eyebrow':'实时工作日倒计时','cd.lede':'根据你的位置自动识别，只计算工作日——排除周末与公共假期（中国补班计入工作日）。','cd.what':'这个数字怎么算的','cd.left':'个工作日剩余','cd.month':'本月剩余工作日',
@@ -308,7 +308,7 @@ I18N_JS = """
       'hero.eyebrow':'営業日 · 週末 · 祝日','hero.h1':'営業日計算機',
       'hero.lede':'2つの日付の間の営業日数を計算、または営業日を加減。95か国対応、週末と祝日を除外（中国の振替休日/振替出勤も考慮）。',
       'calc.tab1':'日付間','calc.tab2':'営業日を加減','calc.calc':'計算',
-      'calc.addcal':'カレンダーに追加','home.countries':'国別の営業日','home.countdown':'今年の残り営業日',
+      'calc.addcal':'カレンダーに追加','calc.country':'国','calc.year':'年','calc.start':'開始日','calc.end':'終了日','calc.addn':'営業日数（マイナスで減算）','home.countries':'国別の営業日','home.countries.sub':'今年の残り営業日を国別に。','home.countdown':'今年の残り営業日',
       'home.countdown.sub':'現在地から自動判定した残り営業日のライブカウントダウン。',
       'home.how':'使い方','home.faq':'FAQ',
       'cd.eyebrow':'営業日ライブカウントダウン','cd.lede':'現在地から自動判定。営業日のみを数え、週末と祝日を除外します。','cd.what':'この数字の計算方法','cd.left':'営業日残り','cd.month':'今月の残り営業日',
@@ -318,7 +318,7 @@ I18N_JS = """
       'hero.eyebrow':'영업일 · 주말 · 공휴일','hero.h1':'영업일 계산기',
       'hero.lede':'두 날짜 사이 영업일을 계산하거나 영업일을 더하고 빼세요. 95개국 지원, 주말·공휴일 제외(중국 조정휴무/보충근무 포함).',
       'calc.tab1':'날짜 사이','calc.tab2':'영업일 더하기/빼기','calc.calc':'계산',
-      'calc.addcal':'캘린더에 추가','home.countries':'국가별 영업일','home.countdown':'올해 남은 영업일',
+      'calc.addcal':'캘린더에 추가','calc.country':'국가','calc.year':'연도','calc.start':'시작일','calc.end':'종료일','calc.addn':'영업일 수(음수는 빼기)','home.countries':'국가별 영업일','home.countries.sub':'올해 남은 영업일을 국가별로.','home.countdown':'올해 남은 영업일',
       'home.countdown.sub':'위치 기반으로 자동 인식한 남은 영업일 실시간 카운트다운.',
       'home.how':'사용법','home.faq':'자주 묻는 질문',
       'cd.eyebrow':'실시간 영업일 카운트다운','cd.lede':'위치를 자동 감지해 영업일만 계산합니다. 주말과 공휴일은 제외합니다.','cd.what':'계산 방식','cd.left':'영업일 남음','cd.month':'이번 달 남은 영업일',
@@ -328,7 +328,7 @@ I18N_JS = """
       'hero.eyebrow':'Días laborables · fines de semana · festivos','hero.h1':'Calculadora de días laborables',
       'hero.lede':'Cuenta días laborables entre dos fechas o suma/resta días laborables — 95 países, sin fines de semana ni festivos (incluye 调休/补班 de China).',
       'calc.tab1':'Días entre fechas','calc.tab2':'Sumar/restar días laborables','calc.calc':'Calcular',
-      'calc.addcal':'Añadir al calendario','home.countries':'Días laborables por país','home.countdown':'Días laborables que quedan este año',
+      'calc.addcal':'Añadir al calendario','calc.country':'País','calc.year':'Año','calc.start':'Fecha inicial','calc.end':'Fecha final','calc.addn':'Días laborables (negativo para restar)','home.countries':'Días laborables por país','home.countries.sub':'Cuántos días laborables quedan este año, país por país.','home.countdown':'Días laborables que quedan este año',
       'home.countdown.sub':'Cuenta atrás en vivo de días laborables restantes, detectada por tu ubicación.',
       'home.how':'Cómo funciona','home.faq':'Preguntas frecuentes',
       'cd.eyebrow':'Cuenta atrás de días laborables','cd.lede':'Detectado automáticamente por tu ubicación. Solo cuenta días laborables, sin fines de semana ni festivos.','cd.what':'Cómo se calcula','cd.left':'días laborables restantes','cd.month':'días laborables este mes',
@@ -338,7 +338,7 @@ I18N_JS = """
       'hero.eyebrow':'Jours ouvrés · week-ends · jours fériés','hero.h1':'Calculateur de jours ouvrés',
       'hero.lede':'Comptez les jours ouvrés entre deux dates, ajoutez ou retirez des jours ouvrés — 95 pays, hors week-ends et jours fériés (y compris 调休/补班 en Chine).',
       'calc.tab1':'Entre deux dates','calc.tab2':'Ajouter/retirer des jours ouvrés','calc.calc':'Calculer',
-      'calc.addcal':'Ajouter au calendrier','home.countries':'Jours ouvrés par pays','home.countdown':'Jours ouvrés restants cette année',
+      'calc.addcal':'Ajouter au calendrier','calc.country':'Pays','calc.year':'Année','calc.start':'Date de début','calc.end':'Date de fin','calc.addn':'Jours ouvrés (négatif pour retirer)','home.countries':'Jours ouvrés par pays','home.countries.sub':'Combien de jours ouvrés restent cette année, pays par pays.','home.countdown':'Jours ouvrés restants cette année',
       'home.countdown.sub':'Compte à rebours en direct des jours ouvrés restants, détecté selon votre position.',
       'home.how':'Comment ça marche','home.faq':'FAQ',
       'cd.eyebrow':'Compte à rebours des jours ouvrés','cd.lede':'Détecté selon votre position. Compte uniquement les jours ouvrés, hors week-ends et fériés.','cd.what':'Comment est calculé ce nombre','cd.left':'jours ouvrés restants','cd.month':'jours ouvrés ce mois',
@@ -348,7 +348,7 @@ I18N_JS = """
       'hero.eyebrow':'Werktage · Wochenenden · Feiertage','hero.h1':'Werktage-Rechner',
       'hero.lede':'Werktage zwischen zwei Daten zählen oder Werktage addieren/subtrahieren — 95 Länder, ohne Wochenenden und Feiertage (inkl. chinesischer 调休/补班).',
       'calc.tab1':'Zwischen Daten','calc.tab2':'Werktage addieren/subtrahieren','calc.calc':'Berechnen',
-      'calc.addcal':'Zum Kalender','home.countries':'Werktage nach Land','home.countdown':'Restliche Werktage dieses Jahr',
+      'calc.addcal':'Zum Kalender','calc.country':'Land','calc.year':'Jahr','calc.start':'Startdatum','calc.end':'Enddatum','calc.addn':'Werktage (negativ zum Abziehen)','home.countries':'Werktage nach Land','home.countries.sub':'Wie viele Werktage dieses Jahr übrig sind, Land für Land.','home.countdown':'Restliche Werktage dieses Jahr',
       'home.countdown.sub':'Live-Countdown der verbleibenden Werktage, automatisch nach Standort.',
       'home.how':'So funktioniert es','home.faq':'FAQ',
       'cd.eyebrow':'Live-Werktage-Countdown','cd.lede':'Automatisch nach Standort erkannt. Zählt nur Werktage, ohne Wochenenden und Feiertage.','cd.what':'So wird gerechnet','cd.left':'Werktage übrig','cd.month':'Werktage diesen Monat übrig',
@@ -422,6 +422,12 @@ SHARE_CSS = """
 .vz-x{display:flex;gap:6px;margin-top:6px}
 .vz-x span{flex:1;text-align:center;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
 @media (prefers-reduced-motion:reduce){.vz-bars .bz{animation:none}}
+/* card sparkline */
+.spark{display:flex;align-items:flex-end;gap:2px;height:26px;margin:8px 0 2px}
+.spark i{flex:1;min-height:2px;border-radius:2px 2px 1px 1px;background:linear-gradient(180deg,#34d399,#0ea5e9);transform-origin:bottom;animation:sparkGrow .8s cubic-bezier(.2,.75,.25,1) both}
+@keyframes sparkGrow{from{transform:scaleY(.05)}to{transform:scaleY(1)}}
+.card-note{font-size:.72rem;color:var(--muted);margin:2px 0 6px}
+@media (prefers-reduced-motion:reduce){.spark i{animation:none}}
 """
 
 
@@ -628,12 +634,15 @@ FAVICON = (
 )
 
 
-def calc_widget(default_cc: str, countries: list[dict]) -> str:
+def calc_widget(default_cc: str, countries: list[dict], preview: str = "") -> str:
     options = "".join(
         f'<option value="{c["code"]}"{" selected" if c["code"] == default_cc else ""}>{c["name"]}</option>'
         for c in countries
     )
-    years = "".join(f'<option value="{y}">{y}</option>' for y in YEARS)
+    _t = date.today()
+    _e = _t + timedelta(days=30)
+    sel_year = _t.year if _t.year in YEARS else max(YEARS)
+    years = "".join(f'<option value="{y}"{" selected" if y == sel_year else ""}>{y}</option>' for y in YEARS)
     return (
         '<div class="calc" data-calc-root>'
         '<div class="calc-tabs">'
@@ -641,19 +650,19 @@ def calc_widget(default_cc: str, countries: list[dict]) -> str:
         '<button type="button" data-mode="add" data-i18n="calc.tab2">Add / subtract business days</button>'
         "</div>"
         '<div class="calc-row">'
-        f'<label>Country<select data-country>{options}</select></label>'
-        f'<label>Year<select data-year>{years}</select></label>'
+        f'<label><span data-i18n="calc.country">Country</span><select data-country>{options}</select></label>'
+        f'<label><span data-i18n="calc.year">Year</span><select data-year>{years}</select></label>'
         "</div>"
         '<div class="calc-row" data-panel="between">'
-        '<label>Start date<input type="date" data-start></label>'
-        '<label>End date<input type="date" data-end></label>'
+        f'<label><span data-i18n="calc.start">Start date</span><input type="date" data-start value="{_t.isoformat()}"></label>'
+        f'<label><span data-i18n="calc.end">End date</span><input type="date" data-end value="{_e.isoformat()}"></label>'
         "</div>"
         '<div class="calc-row" data-panel="add" hidden>'
-        '<label>Start date<input type="date" data-add-start></label>'
-        '<label>Business days (negative to subtract)<input type="number" value="10" min="-365" max="365" data-add-n></label>'
+        f'<label><span data-i18n="calc.start">Start date</span><input type="date" data-add-start value="{_t.isoformat()}"></label>'
+        '<label><span data-i18n="calc.addn">Business days (negative to subtract)</span><input type="number" value="10" min="-365" max="365" data-add-n></label>'
         "</div>"
         '<button type="button" class="btn" data-calc data-i18n="calc.calc">Calculate</button>'
-        '<div class="calc-result" data-result></div>'
+        f'<div class="calc-result" data-result>{preview}</div>'
         "</div>"
     )
 
@@ -776,7 +785,37 @@ CALC_JS = """
     if (!btn) return;
     downloadIcs(btn.getAttribute('data-ics'), btn.getAttribute('data-ics-title') || 'Business day');
   });
+  // sensible defaults: today → +30 days, current year, first result visible immediately
+  (function(){
+    var t = new Date(); t.setHours(0, 0, 0, 0);
+    var e = new Date(t); e.setDate(e.getDate() + 30);
+    var sEl = root.querySelector('[data-start]'), eEl = root.querySelector('[data-end]'),
+        aEl = root.querySelector('[data-add-start]'), yEl = root.querySelector('[data-year]');
+    if (sEl && !sEl.value) sEl.value = iso(t);
+    if (eEl && !eEl.value) eEl.value = iso(e);
+    if (aEl && !aEl.value) aEl.value = iso(t);
+    if (yEl) { var y = String(t.getFullYear());
+      for (var i = 0; i < yEl.options.length; i++) { if (yEl.options[i].value === y) { yEl.selectedIndex = i; break; } } }
+  })();
   setMode('between');
+  // geo-detect the country so visitors outside the US see their own numbers
+  fetch('/geo').then(function(r){ return r.ok ? r.json() : null; }).then(function(g){
+    if (!g || !g.country) return;
+    var sel = root.querySelector('[data-country]');
+    if (!sel) return;
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === g.country) {
+        if (sel.selectedIndex !== i) { sel.selectedIndex = i; }
+        var b0 = root.querySelector('[data-calc]');
+        if (b0) b0.click();
+        return;
+      }
+    }
+  }).catch(function(){});
+  var recalc = function(){ var b = root.querySelector('[data-calc]'); if (b) b.click(); };
+  var cSel = root.querySelector('[data-country]'), ySel = root.querySelector('[data-year]');
+  if (cSel) cSel.addEventListener('change', recalc);
+  if (ySel) ySel.addEventListener('change', recalc);
 })();
 """
 
@@ -822,6 +861,24 @@ def main() -> int:
             d += timedelta(days=1)
         return sum(monthly), monthly
 
+    def static_preview(cc: str, days: int = 30) -> str:
+        """Server-rendered first result so numbers are visible before any click."""
+        t = date.today()
+        e = t + timedelta(days=days)
+        n = 0
+        d = t
+        while d <= e:
+            weekend = d.weekday() >= 5
+            hol = public.get((cc, d.year), set())
+            mk = makeup.get((cc, d.year), set())
+            if (mk and d in mk) or (not weekend and d not in hol):
+                n += 1
+            d += timedelta(days=1)
+        return (
+            f'<div class="result-card"><div class="result-num">{n}<span>business days</span></div>'
+            f'<div class="result-detail">{t.isoformat()} → {e.isoformat()} · {days} calendar days</div></div>'
+        )
+
     countries = []
     for cc in sorted({r["country"] for r in rows}):
         name = COUNTRY_NAMES.get(cc, cc)
@@ -846,15 +903,20 @@ def main() -> int:
     )
 
     # homepage
-    current_year = 2026
+    current_year = date.today().year if date.today().year in YEARS else max(YEARS)
     cards = []
     for c in countries:
-        total, _ = business_total(c["code"], current_year)
+        total, monthly = business_total(c["code"], current_year)
         if total <= 0:
             continue
+        _mm = monthly[1:] if len(monthly) > 12 else monthly
+        _mx = max(_mm) or 1
+        spark = "".join(f'<i style="height:{max(6, v / _mx * 100):.0f}%"></i>' for v in _mm)
         cards.append(
             f'<a class="card" href="{c["slug"]}/index.html"><div class="flag">{flag_emoji(c["code"])}</div>'
-            f'<h3>{c["name"]}</h3><p>{total} business days in {current_year}</p></a>'
+            f'<h3>{c["name"]}</h3><p>{total} business days in {current_year}</p>'
+            f'<span class="spark" aria-hidden="true">{spark}</span>'
+            f'<p class="card-note">{min(_mm)}–{max(_mm)} working days per month</p></a>'
         )
     faq = [
         ("What counts as a business day?",
@@ -871,9 +933,9 @@ def main() -> int:
         '<h1 data-i18n="hero.h1">Business days calculator</h1>'
         '<p class="lede" data-i18n="hero.lede">Count working days between two dates, or add business days to a date — for 95 countries, skipping weekends and public holidays (including China\'s 调休/补班 rules).</p>'
         '</section>'
-        + calc_widget("US", countries)
+        + calc_widget("US", countries, static_preview("US"))
         + '<section class="sec"><h2 data-i18n="home.countries">Business days by country</h2>'
-        '<p class="sub">How many business days are left in ' + str(current_year) + ", country by country.</p>"
+        '<p class="sub" data-i18n="home.countries.sub">How many business days are left this year, country by country.</p>'
         '<div class="grid">' + "".join(cards) + "</div></section>"
         '<section class="ad">[Ad slot]</section>'
         '<section class="sec"><h2 data-i18n="home.how">How it works</h2>'
@@ -900,7 +962,7 @@ def main() -> int:
         cc, name, slug = c["code"], c["name"], c["slug"]
         cdir = out / slug
         cdir.mkdir(parents=True, exist_ok=True)
-        cw = calc_widget(cc, countries)
+        cw = calc_widget(cc, countries, static_preview(cc))
         year_rows = []
         for year in YEARS:
             total, monthly = business_total(cc, year)
