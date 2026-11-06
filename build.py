@@ -111,12 +111,14 @@ tbody tr:hover{background:#faf7f0}
 .cd-hero .lede{color:#b9c6c2;max-width:36em}
 .cd-wrap{display:grid;grid-template-columns:220px 1fr;gap:26px;align-items:center;margin-top:18px}
 @media(max-width:760px){.cd-wrap{grid-template-columns:1fr}}
-.cd-ring{position:relative;width:200px;height:200px;margin:0 auto}
-.cd-ring svg{transform:rotate(-90deg);width:100%;height:100%}
-.cd-ring .ring-bg{fill:none;stroke:rgba(255,255,255,.10);stroke-width:10}
-.cd-ring .ring-fg{fill:none;stroke:#22c55e;stroke-width:10;stroke-linecap:round;stroke-dasharray:339.3;stroke-dashoffset:339.3;transition:stroke-dashoffset 1.4s cubic-bezier(.16,1,.3,1)}
-.cd-ring-mid{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
-.cd-big{font-family:var(--font-display);font-size:3.1rem;line-height:1;color:#f7fbfa}
+.cd-ring{position:relative;width:200px;height:200px;margin:0 auto;border-radius:50%;
+  background:conic-gradient(#22c55e 0deg,#22c55e calc(var(--p,85) * 3.6deg),rgba(255,255,255,.10) calc(var(--p,85) * 3.6deg));
+  box-shadow:0 0 40px rgba(34,197,94,.18);transition:background .9s cubic-bezier(.16,1,.3,1)}
+.cd-ring::after{content:"";position:absolute;inset:16px;border-radius:50%;background:#0a141c;box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+.cd-ring-mid{position:absolute;inset:0;display:grid;place-items:center;text-align:center;z-index:2}
+.lang-select{border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:9px;padding:4px 8px;font-size:.8rem;margin-left:14px}
+@media(max-width:640px){nav{flex-wrap:wrap;gap:10px}.lang-select{margin-left:0}}
+.cd-big{font-family:var(--font-display);font-size:3.1rem;line-height:1;color:#f7fbfa;position:relative;z-index:2}
 .cd-big span{display:block;font-family:var(--font-body);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#8fa39d;margin-top:6px}
 .cd-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .cd-tile{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:16px 18px;backdrop-filter:blur(6px)}
@@ -197,12 +199,20 @@ COUNTDOWN_JS = """
     var pct=total?Math.round((total-yearLeft)/total*100):0;
     setText('cd-year',yearLeft); setText('cd-month',monthLeft); setText('cd-total',total);
     setText('cd-pct',pct+'%');
-    var fg=document.querySelector('.cd-ring .ring-fg');
-    if(fg){ fg.style.strokeDashoffset=(339.3*(1-pct/100)).toFixed(1); }
+    var fg=document.querySelector('[data-cd-ring]');
+    if(fg){ fg.style.setProperty('--p', pct); }
     var keys=Object.keys(hol).sort(), next=null;
     for(var i=0;i<keys.length;i++){ if(keys[i]>=iso(today)){ next=keys[i]; break; } }
     if(next){ setText('cd-next',Math.round((new Date(next+'T00:00:00')-today)/86400000)); }
-    else { setText('cd-next','—'); }
+    else {
+      setText('cd-next','—');
+      fetch('/api/v1/business/'+cc+'/'+(y+1)+'.json').then(function(r){return r.ok?r.json():null;}).then(function(nd){
+        if(nd&&nd.holidays&&nd.holidays.length){
+          var h=nd.holidays.slice().sort()[0];
+          setText('cd-next',Math.round((new Date(h+'T00:00:00')-today)/86400000));
+        }
+      }).catch(function(){});
+    }
     var nameEl=document.getElementById('cd-name'); if(nameEl) nameEl.style.display='none';
   }
   function load(cc){
@@ -242,20 +252,130 @@ COUNTDOWN_JS = """
 """
 
 
+I18N_JS = """
+(function(){
+  var D={
+    en:{'nav.calc':'Calculator','nav.cd':'Countdown','nav.countries':'Countries','nav.api':'API','nav.about':'About',
+      'hero.eyebrow':'Business days · weekends · public holidays','hero.h1':'Business days calculator',
+      'hero.lede':'Count working days between two dates, or add business days to a date — for 95 countries, skipping weekends and public holidays (including China\\'s 调休/补班 rules).',
+      'calc.tab1':'Days between dates','calc.tab2':'Add / subtract business days','calc.calc':'Calculate',
+      'calc.addcal':'Add to calendar','home.countries':'Business days by country','home.countdown':'Business days left this year',
+      'home.countdown.sub':'A live countdown of how many working days remain — auto-detected for your country.',
+      'home.how':'How it works','home.faq':'FAQ',
+      'cd.eyebrow':'Live business-day countdown','cd.left':'business days left','cd.month':'business days left this month',
+      'cd.next':'days until next public holiday','cd.total':'business days this year','cd.clock':'your local time',
+      'cd.pct':'of the year\\'s business days done','foot.note':'Count business days between dates, skip weekends and holidays.'},
+    zh:{'nav.calc':'计算器','nav.cd':'倒计时','nav.countries':'国家','nav.api':'API','nav.about':'关于',
+      'hero.eyebrow':'工作日 · 周末 · 公共假期','hero.h1':'工作日计算器',
+      'hero.lede':'计算两个日期之间的工作日，或在日期上加减工作日——支持 95 个国家，自动排除周末与公共假期（含中国调休/补班）。',
+      'calc.tab1':'两个日期之间','calc.tab2':'加减工作日','calc.calc':'计算',
+      'calc.addcal':'加入日历','home.countries':'按国家查看工作日','home.countdown':'今年还剩多少工作日',
+      'home.countdown.sub':'实时倒计时，按你的位置自动识别国家。',
+      'home.how':'怎么用','home.faq':'常见问题',
+      'cd.eyebrow':'实时工作日倒计时','cd.left':'个工作日剩余','cd.month':'本月剩余工作日',
+      'cd.next':'距离下一个公共假期','cd.total':'今年工作日总数','cd.clock':'你的当地时间',
+      'cd.pct':'今年工作日已完成','foot.note':'计算工作日，自动跳过周末和假期。'},
+    ja:{'nav.calc':'計算機','nav.cd':'カウントダウン','nav.countries':'国','nav.api':'API','nav.about':'概要',
+      'hero.eyebrow':'営業日 · 週末 · 祝日','hero.h1':'営業日計算機',
+      'hero.lede':'2つの日付の間の営業日数を計算、または営業日を加減。95か国対応、週末と祝日を除外（中国の振替休日/振替出勤も考慮）。',
+      'calc.tab1':'日付間','calc.tab2':'営業日を加減','calc.calc':'計算',
+      'calc.addcal':'カレンダーに追加','home.countries':'国別の営業日','home.countdown':'今年の残り営業日',
+      'home.countdown.sub':'現在地から自動判定した残り営業日のライブカウントダウン。',
+      'home.how':'使い方','home.faq':'FAQ',
+      'cd.eyebrow':'営業日ライブカウントダウン','cd.left':'営業日残り','cd.month':'今月の残り営業日',
+      'cd.next':'次の祝日まで','cd.total':'今年の営業日','cd.clock':'現地時刻',
+      'cd.pct':'今年の営業日消化率','foot.note':'週末と祝日を除いた営業日を計算。'},
+    ko:{'nav.calc':'계산기','nav.cd':'카운트다운','nav.countries':'국가','nav.api':'API','nav.about':'소개',
+      'hero.eyebrow':'영업일 · 주말 · 공휴일','hero.h1':'영업일 계산기',
+      'hero.lede':'두 날짜 사이 영업일을 계산하거나 영업일을 더하고 빼세요. 95개국 지원, 주말·공휴일 제외(중국 조정휴무/보충근무 포함).',
+      'calc.tab1':'날짜 사이','calc.tab2':'영업일 더하기/빼기','calc.calc':'계산',
+      'calc.addcal':'캘린더에 추가','home.countries':'국가별 영업일','home.countdown':'올해 남은 영업일',
+      'home.countdown.sub':'위치 기반으로 자동 인식한 남은 영업일 실시간 카운트다운.',
+      'home.how':'사용법','home.faq':'자주 묻는 질문',
+      'cd.eyebrow':'실시간 영업일 카운트다운','cd.left':'영업일 남음','cd.month':'이번 달 남은 영업일',
+      'cd.next':'다음 공휴일까지','cd.total':'올해 영업일','cd.clock':'현지 시간',
+      'cd.pct':'올해 영업일 진행률','foot.note':'주말과 공휴일을 제외한 영업일 계산.'},
+    es:{'nav.calc':'Calculadora','nav.cd':'Cuenta atrás','nav.countries':'Países','nav.api':'API','nav.about':'Acerca de',
+      'hero.eyebrow':'Días laborables · fines de semana · festivos','hero.h1':'Calculadora de días laborables',
+      'hero.lede':'Cuenta días laborables entre dos fechas o suma/resta días laborables — 95 países, sin fines de semana ni festivos (incluye 调休/补班 de China).',
+      'calc.tab1':'Días entre fechas','calc.tab2':'Sumar/restar días laborables','calc.calc':'Calcular',
+      'calc.addcal':'Añadir al calendario','home.countries':'Días laborables por país','home.countdown':'Días laborables que quedan este año',
+      'home.countdown.sub':'Cuenta atrás en vivo de días laborables restantes, detectada por tu ubicación.',
+      'home.how':'Cómo funciona','home.faq':'Preguntas frecuentes',
+      'cd.eyebrow':'Cuenta atrás de días laborables','cd.left':'días laborables restantes','cd.month':'días laborables este mes',
+      'cd.next':'días hasta el próximo festivo','cd.total':'días laborables este año','cd.clock':'tu hora local',
+      'cd.pct':'del año laboral completado','foot.note':'Calcula días laborables sin fines de semana ni festivos.'},
+    fr:{'nav.calc':'Calculateur','nav.cd':'Compte à rebours','nav.countries':'Pays','nav.api':'API','nav.about':'À propos',
+      'hero.eyebrow':'Jours ouvrés · week-ends · jours fériés','hero.h1':'Calculateur de jours ouvrés',
+      'hero.lede':'Comptez les jours ouvrés entre deux dates, ajoutez ou retirez des jours ouvrés — 95 pays, hors week-ends et jours fériés (y compris 调休/补班 en Chine).',
+      'calc.tab1':'Entre deux dates','calc.tab2':'Ajouter/retirer des jours ouvrés','calc.calc':'Calculer',
+      'calc.addcal':'Ajouter au calendrier','home.countries':'Jours ouvrés par pays','home.countdown':'Jours ouvrés restants cette année',
+      'home.countdown.sub':'Compte à rebours en direct des jours ouvrés restants, détecté selon votre position.',
+      'home.how':'Comment ça marche','home.faq':'FAQ',
+      'cd.eyebrow':'Compte à rebours des jours ouvrés','cd.left':'jours ouvrés restants','cd.month':'jours ouvrés ce mois',
+      'cd.next':'jours avant le prochain férié','cd.total':'jours ouvrés cette année','cd.clock':'votre heure locale',
+      'cd.pct':'de l\\'année ouvrée écoulée','foot.note':'Compte les jours ouvrés hors week-ends et fériés.'},
+    de:{'nav.calc':'Rechner','nav.cd':'Countdown','nav.countries':'Länder','nav.api':'API','nav.about':'Über',
+      'hero.eyebrow':'Werktage · Wochenenden · Feiertage','hero.h1':'Werktage-Rechner',
+      'hero.lede':'Werktage zwischen zwei Daten zählen oder Werktage addieren/subtrahieren — 95 Länder, ohne Wochenenden und Feiertage (inkl. chinesischer 调休/补班).',
+      'calc.tab1':'Zwischen Daten','calc.tab2':'Werktage addieren/subtrahieren','calc.calc':'Berechnen',
+      'calc.addcal':'Zum Kalender','home.countries':'Werktage nach Land','home.countdown':'Restliche Werktage dieses Jahr',
+      'home.countdown.sub':'Live-Countdown der verbleibenden Werktage, automatisch nach Standort.',
+      'home.how':'So funktioniert es','home.faq':'FAQ',
+      'cd.eyebrow':'Live-Werktage-Countdown','cd.left':'Werktage übrig','cd.month':'Werktage diesen Monat übrig',
+      'cd.next':'Tage bis zum nächsten Feiertag','cd.total':'Werktage dieses Jahr','cd.clock':'Ihre Ortszeit',
+      'cd.pct':'des Arbeitsjahres erledigt','foot.note':'Werktage ohne Wochenenden und Feiertage zählen.'}
+  };
+  var CC_LANG={CN:'zh',TW:'zh',HK:'zh',SG:'zh',JP:'ja',KR:'ko',ES:'es',MX:'es',AR:'es',CO:'es',CL:'es',PE:'es',FR:'fr',BE:'fr',CA:'fr',DE:'de',AT:'de',CH:'de'};
+  var lang='en';
+  try{ var saved=localStorage.getItem('wk_lang'); if(saved&&D[saved]) lang=saved; }catch(e){}
+  function detect(){
+    var n=(navigator.language||'en').toLowerCase(), b=n.split('-')[0];
+    if(D[b]) return b;
+    return 'en';
+  }
+  function t(k){ var d=D[lang]||D.en; return d[k]||D.en[k]||k; }
+  function apply(){
+    document.documentElement.lang=lang;
+    document.querySelectorAll('[data-i18n]').forEach(function(el){ el.textContent=t(el.getAttribute('data-i18n')); });
+    document.querySelectorAll('[data-hk-lang]').forEach(function(s){ s.value=lang; });
+  }
+  function set(l){ if(!D[l]) return; lang=l; try{localStorage.setItem('wk_lang',l);}catch(e){} apply(); }
+  window.HKI18N={t:t,set:set,lang:function(){return lang;},apply:apply};
+  document.addEventListener('DOMContentLoaded',function(){
+    apply();
+    document.querySelectorAll('[data-hk-lang]').forEach(function(s){ s.addEventListener('change',function(){set(this.value);}); });
+    if(!localStorage.getItem('wk_lang')){
+      var auto=detect();
+      fetch('/geo').then(function(r){return r.ok?r.json():null;}).then(function(d){
+        var c=((d&&d.country)||'').toUpperCase();
+        var l=CC_LANG[c]||auto;
+        if(D[l]) set(l);
+      }).catch(function(){ if(auto!=='en') set(auto); });
+    }
+  });
+})();
+"""
+
+
 def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra: str = "") -> str:
     nav = (
         '<header class="site-head"><div class="wrap head-inner">'
         f'<a class="brand" href="{base}index.html"><span class="brand-mark">◷</span>{SITE_NAME}</a>'
-        f'<nav><a href="{base}index.html">Calculator</a>'
-        f'<a href="{base}countdown/index.html">Countdown</a>'
-        f'<a href="{base}index.html#countries">Countries</a>'
-        f'<a href="{base}api/index.html">API</a>'
-        f'<a href="{base}about/index.html">About</a></nav>'
+        f'<nav><a href="{base}index.html" data-i18n="nav.calc">Calculator</a>'
+        f'<a href="{base}countdown/index.html" data-i18n="nav.cd">Countdown</a>'
+        f'<a href="{base}index.html#countries" data-i18n="nav.countries">Countries</a>'
+        f'<a href="{base}api/index.html" data-i18n="nav.api">API</a>'
+        f'<a href="{base}about/index.html" data-i18n="nav.about">About</a></nav>'
+        '<select class="lang-select" data-hk-lang aria-label="Language">'
+        '<option value="en">EN</option><option value="zh">中文</option><option value="ja">日本語</option>'
+        '<option value="ko">한국어</option><option value="es">ES</option><option value="fr">FR</option>'
+        '<option value="de">DE</option></select>'
         "</div></header>"
     )
     foot = (
         '<footer class="site-foot"><div class="wrap">'
-        f'<p><strong>{SITE_NAME}</strong> — {SITE_TAGLINE}</p>'
+        f'<p><strong>{SITE_NAME}</strong> — <span data-i18n="foot.note">Count business days between dates, skip weekends and holidays.</span></p>'
         '<p>Data: open holiday datasets (Nager.Date, OpenHolidays, python-holidays, chinese-days). '
         "For planning only — confirm critical dates with official sources.</p>"
         f'<p><a href="{base}privacy/index.html">Privacy</a> · '
@@ -274,7 +394,7 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
         f"<style>{CSS}</style></head><body>{nav}"
         f'<main class="wrap">{body}</main>{foot}'
-        f"<script>{MOTION_JS}</script>{extra}</body></html>"
+        f"<script>{MOTION_JS}</script><script>{I18N_JS}</script>{extra}</body></html>"
     )
 
 
@@ -295,8 +415,8 @@ def calc_widget(default_cc: str, countries: list[dict]) -> str:
     return (
         '<div class="calc" data-calc-root>'
         '<div class="calc-tabs">'
-        '<button type="button" data-mode="between" class="on">Days between dates</button>'
-        '<button type="button" data-mode="add">Add / subtract business days</button>'
+        '<button type="button" data-mode="between" class="on" data-i18n="calc.tab1">Days between dates</button>'
+        '<button type="button" data-mode="add" data-i18n="calc.tab2">Add / subtract business days</button>'
         "</div>"
         '<div class="calc-row">'
         f'<label>Country<select data-country>{options}</select></label>'
@@ -310,7 +430,7 @@ def calc_widget(default_cc: str, countries: list[dict]) -> str:
         '<label>Start date<input type="date" data-add-start></label>'
         '<label>Business days (negative to subtract)<input type="number" value="10" min="-365" max="365" data-add-n></label>'
         "</div>"
-        '<button type="button" class="btn" data-calc>Calculate</button>'
+        '<button type="button" class="btn" data-calc data-i18n="calc.calc">Calculate</button>'
         '<div class="calc-result" data-result></div>'
         "</div>"
     )
@@ -518,23 +638,25 @@ def main() -> int:
     faq_html = "".join(f"<dt>{q}</dt><dd>{a}</dd>" for q, a in faq)
     body = (
         '<section class="hero">'
-        '<p class="eyebrow">Business days · weekends · public holidays</p>'
-        "<h1>Business days calculator</h1>"
-        '<p class="lede">Count working days between two dates, or add business days to a date — for 95 countries, '
-        "skipping weekends and public holidays (including China's 调休/补班 rules).</p>"
+        '<p class="eyebrow" data-i18n="hero.eyebrow">Business days · weekends · public holidays</p>'
+        '<h1 data-i18n="hero.h1">Business days calculator</h1>'
+        '<p class="lede" data-i18n="hero.lede">Count working days between two dates, or add business days to a date — for 95 countries, skipping weekends and public holidays (including China\'s 调休/补班 rules).</p>'
         '</section>'
         + calc_widget("US", countries)
-        + '<section class="sec"><h2>Business days by country</h2>'
+        + '<section class="sec"><h2 data-i18n="home.countries">Business days by country</h2>'
         '<p class="sub">How many business days are left in ' + str(current_year) + ", country by country.</p>"
         '<div class="grid">' + "".join(cards) + "</div></section>"
         '<section class="ad">[Ad slot]</section>'
-        '<section class="sec"><h2>How it works</h2>'
+        '<section class="sec"><h2 data-i18n="home.how">How it works</h2>'
         "<p>Pick a country and year, then either count the business days between two dates or add/subtract a number "
         "of business days. The calculator loads that country's public holidays and excludes them. Weekends are "
         "skipped automatically; China's make-up workdays (补班) are counted as working days.</p>"
         '<div class="callout">Tip: use it for delivery estimates, SLA deadlines, payroll periods, visa timelines and project planning.</div>'
         "</section>"
-        '<section class="sec"><h2>FAQ</h2><dl class="faq">' + faq_html + "</dl></section>"
+        '<section class="sec"><h2 data-i18n="home.countdown">Business days left this year</h2>'
+        '<p class="sub" data-i18n="home.countdown.sub">A live countdown of how many working days remain — auto-detected for your country.</p>'
+        '<p><a class="btn" href="countdown/index.html">Open the live countdown</a></p></section>'
+        '<section class="sec"><h2 data-i18n="home.faq">FAQ</h2><dl class="faq">' + faq_html + "</dl></section>"
     )
     (out / "index.html").write_text(
         page("Business Days Calculator — Count Working Days (95 countries)", 
@@ -663,28 +785,26 @@ def main() -> int:
     )
     cd_body = (
         '<section class="cd-hero" id="hk-countdown" data-country="' + static_cc + '">'
-        '<p class="eyebrow">Live business-day countdown</p>'
-        f'<h1>Business days left in <span id="cd-year-label">{static_year}</span></h1>'
-        '<p class="lede">Detected automatically from your location. Counts working days only — weekends and '
+        '<p class="eyebrow" data-i18n="cd.eyebrow">Live business-day countdown</p>'
+        f'<h1><span data-i18n="home.countdown">Business days left this year</span> <span id="cd-year-label">{static_year}</span></h1>'
+        '<p class="lede" data-i18n="cd.lede">Detected automatically from your location. Counts working days only — weekends and '
         "public holidays excluded (China's 补班 counted as working days).</p>"
         '<div class="cd-wrap">'
-        '<div class="cd-ring" aria-hidden="true">'
-        '<svg viewBox="0 0 120 120"><circle class="ring-bg" cx="60" cy="60" r="54"></circle>'
-        '<circle class="ring-fg" cx="60" cy="60" r="54"></circle></svg>'
+        '<div class="cd-ring" data-cd-ring style="--p:' + str(static_pct) + '">'
         '<div class="cd-ring-mid"><div class="cd-big" id="cd-year">' + str(static_left) + '</div>'
-        '<span>business days left</span></div></div>'
+        '<span data-i18n="cd.left">business days left</span></div></div>'
         '<div class="cd-tiles">'
         '<div class="cd-tile"><div class="v" id="cd-month">' + str(static_month_left) + '</div>'
-        '<div class="k">business days left this month</div></div>'
+        '<div class="k" data-i18n="cd.month">business days left this month</div></div>'
         '<div class="cd-tile"><div class="v" id="cd-next">' + (str(next_days) if next_days is not None else "—") + '</div>'
-        '<div class="k">days until next public holiday</div></div>'
+        '<div class="k" data-i18n="cd.next">days until next public holiday</div></div>'
         '<div class="cd-tile"><div class="v" id="cd-total">' + str(static_total) + '</div>'
-        '<div class="k">business days this year</div></div>'
+        '<div class="k" data-i18n="cd.total">business days this year</div></div>'
         '<div class="cd-tile"><div class="v"><span class="dot-live"></span><span id="cd-clock">--:--:--</span></div>'
-        '<div class="k">your local time</div></div>'
+        '<div class="k" data-i18n="cd.clock">your local time</div></div>'
         "</div></div>"
         '<div class="cd-country"><label>Country <select data-cd-country>' + country_options + "</select></label>"
-        '<span><strong id="cd-pct">' + str(static_pct) + '%</strong> of the year\'s business days done</span></div>'
+        '<span><strong id="cd-pct">' + str(static_pct) + '%</strong> <span data-i18n="cd.pct">of the year\'s business days done</span></span></div>'
         '<p class="cd-note">Location detected via Cloudflare edge geolocation · '
         '<a href="../index.html">business days calculator</a> · <a href="../about/index.html">about</a></p>'
         "</section>"
