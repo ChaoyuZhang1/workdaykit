@@ -113,6 +113,9 @@ tbody tr:hover{background:#faf7f0}
 .cd-hero>*{position:relative}
 .cd-hero .eyebrow{color:#7dd3a8}
 .cd-hero h1{color:#f7fbfa}
+.cd-hero h2{color:#f7fbfa;font-size:clamp(1.3rem,2.2vw,1.75rem);margin:6px 0 0;letter-spacing:-.01em}
+.cd-more{display:inline-block;color:#7dd3a8;font-weight:600;font-size:.95rem;text-decoration:none;border-bottom:1px solid rgba(125,211,168,.45);padding-bottom:2px}
+.cd-more:hover{color:#a7f3c9;border-bottom-color:#a7f3c9}
 .cd-hero .lede{color:#b9c6c2;max-width:36em}
 .cd-wrap{display:grid;grid-template-columns:220px 1fr;gap:26px;align-items:center;margin-top:18px}
 @media(max-width:760px){.cd-wrap{grid-template-columns:1fr}}
@@ -956,7 +959,117 @@ def main() -> int:
     wk_js = (
         "<script>window.WK=" + json.dumps({"countries": countries, "years": YEARS}) + ";</script>"
         f"<script>{CALC_JS}</script>"
+        f"<script>{COUNTDOWN_JS}</script>"
     )
+
+    # countdown static data (homepage widget + countdown page)
+    def biz_between(cc: str, start: date, end: date) -> int:
+        n = 0
+        d = start
+        while d <= end:
+            wk = d.weekday() >= 5
+            h = public.get((cc, d.year), set())
+            m = makeup.get((cc, d.year), set())
+            if (m and d in m) or (not wk and d not in h):
+                n += 1
+            d += timedelta(days=1)
+        return n
+
+    today_d = date.today()
+    data_years = sorted({y for (_c, y) in public.keys()})
+    static_year = today_d.year if today_d.year in data_years else (data_years[-1] if data_years else today_d.year)
+    static_cc = "US" if "US" in {c["code"] for c in countries} else countries[0]["code"]
+    if static_year != today_d.year:
+        static_start = date(static_year, 1, 1)
+        static_end = date(static_year, 12, 31)
+    else:
+        static_start = today_d
+        static_end = date(static_year, 12, 31)
+    static_total = biz_between(static_cc, date(static_year, 1, 1), date(static_year, 12, 31))
+    static_left = biz_between(static_cc, static_start, static_end)
+    static_month_left = biz_between(static_cc, today_d, date(today_d.year, today_d.month + 1, 1) - timedelta(days=1)) if today_d.month < 12 else biz_between(static_cc, today_d, date(today_d.year, 12, 31))
+    static_done = static_total - static_left
+    static_pct = round(static_done / static_total * 100) if static_total else 0
+    next_hol = None
+    for d in sorted(public.get((static_cc, static_year), set())):
+        if d >= today_d:
+            next_hol = d
+            break
+    next_days = (next_hol - today_d).days if next_hol else None
+
+    static_monthly = []
+    for _m in range(1, 13):
+        _ms = date(static_year, _m, 1)
+        _me = (date(static_year + 1, 1, 1) if _m == 12 else date(static_year, _m + 1, 1)) - timedelta(days=1)
+        static_monthly.append(biz_between(static_cc, _ms, _me))
+    _lo, _hi = min(static_monthly), max(static_monthly)
+    _rng = max(_hi - _lo, 1)
+    cd_bars = "".join(
+        f'<div class="bz" data-m="{_i}" style="height:{round(20 + (v - _lo) / _rng * 66)}%">'
+        f"<b>{v}</b></div>"
+        for _i, v in enumerate(static_monthly)
+    )
+    cd_bar_labels = '<div class="vz-x">' + "".join(f"<span>{m}</span>" for m in MONTHS) + "</div>"
+
+    country_options = "".join(
+        f'<option value="{c["code"]}"{" selected" if c["code"] == static_cc else ""}>{c["name"]}</option>'
+        for c in countries
+    )
+    def cd_section(heading: str = "h1", with_bars: bool = True, with_share: bool = True,
+                   with_link: bool = False) -> str:
+        head = (
+            f'<{heading}><span data-i18n="home.countdown">Business days left this year</span> '
+            f'<span id="cd-year-label">{static_year}</span></{heading}>'
+        )
+        parts = [
+            '<section class="cd-hero" id="hk-countdown" data-country="' + static_cc + '">',
+            '<p class="eyebrow" data-i18n="cd.eyebrow">Live business-day countdown</p>',
+            head,
+            '<div class="cd-wrap">',
+            '<div class="cd-ring" data-cd-ring style="--p:' + str(static_pct) + '">'
+            '<div class="cd-ring-mid"><div class="cd-big" id="cd-year">' + str(static_left) + '</div>'
+            '<span data-i18n="cd.left">business days left</span></div></div>',
+            '<div class="cd-tiles">',
+            '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">\U0001F4C5</span>'
+            '<div class="v" id="cd-month">' + str(static_month_left) + '</div>'
+            '<div class="k" data-i18n="cd.month">business days left this month</div></div>',
+            '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">\U0001F3AF</span>'
+            '<div class="v" id="cd-next">' + (str(next_days) if next_days is not None else "\u2014") + '</div>'
+            '<div class="k" data-i18n="cd.next">days until next public holiday</div></div>',
+            '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">\U0001F5D3\uFE0F</span>'
+            '<div class="v" id="cd-total">' + str(static_total) + '</div>'
+            '<div class="k" data-i18n="cd.total">business days this year</div></div>',
+            '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">\u23F1\uFE0F</span>'
+            '<div class="v"><span class="dot-live"></span><span id="cd-clock">--:--:--</span></div>'
+            '<div class="k" data-i18n="cd.clock">your local time</div></div>',
+            "</div></div>",
+            '<div class="cd-country"><label>Country <select data-cd-country>' + country_options
+            + "</select></label>"
+            '<span><strong id="cd-pct">' + str(static_pct) + '%</strong> '
+            '<span data-i18n="cd.pct">of the year\'s business days done</span></span></div>',
+        ]
+        if with_bars:
+            parts.append(
+                '<div class="vz-wrap"><h3>\U0001F4CA Business days by month</h3>'
+                '<div class="vz-bars" id="cd-bars">' + cd_bars + "</div>" + cd_bar_labels + "</div>"
+            )
+        parts.append(
+            '<p class="cd-note" data-i18n="cd.lede">Auto-detected from your location \u2014 change the '
+            "country above to recalculate. Counts working days only: weekends and public holidays are "
+            "excluded (China's \u8865\u73ED counted as working days).</p>"
+        )
+        if with_link:
+            parts.append(
+                '<p style="margin-top:14px"><a class="cd-more" href="countdown/index.html">'
+                "\u67E5\u770B\u5B8C\u6574\u5012\u8BA1\u65F6 \u00B7 Open full countdown \u2192</a></p>"
+            )
+        if with_share:
+            parts.append(
+                '<p style="margin-top:18px"><button type="button" class="btn-share-hot" data-share-open>'
+                '<span aria-hidden="true">\u2728</span> \u751F\u6210\u5206\u4EAB\u5361\u7247 \u00B7 Share card</button></p>'
+            )
+        parts.append("</section>")
+        return "".join(parts)
 
     # homepage
     current_year = date.today().year if date.today().year in YEARS else max(YEARS)
@@ -984,7 +1097,8 @@ def main() -> int:
     ]
     faq_html = "".join(f"<dt>{q}</dt><dd>{a}</dd>" for q, a in faq)
     body = (
-        '<section class="hero">'
+        cd_section(heading="h2", with_bars=False, with_share=False, with_link=True)
+        + '<section class="hero">'
         '<p class="eyebrow" data-i18n="hero.eyebrow">Business days · weekends · public holidays</p>'
         '<h1 data-i18n="hero.h1">Business days calculator</h1>'
         '<p class="lede" data-i18n="hero.lede">Count working days between two dates, or add business days to a date — for 95 countries, skipping weekends and public holidays (including China\'s 调休/补班 rules).</p>'
@@ -1000,9 +1114,6 @@ def main() -> int:
         "skipped automatically; China's make-up workdays (补班) are counted as working days.</p>"
         '<div class="callout">Tip: use it for delivery estimates, SLA deadlines, payroll periods, visa timelines and project planning.</div>'
         "</section>"
-        '<section class="sec"><h2 data-i18n="home.countdown">Business days left this year</h2>'
-        '<p class="sub" data-i18n="home.countdown.sub">A live countdown of how many working days remain — auto-detected for your country.</p>'
-        '<p><a class="btn" href="countdown/index.html">Open the live countdown</a></p></section>'
         '<section class="sec"><h2 data-i18n="home.faq">FAQ</h2><dl class="faq">' + faq_html + "</dl></section>"
     )
     (out / "index.html").write_text(
@@ -1091,105 +1202,21 @@ def main() -> int:
                 encoding="utf-8",
             )
 
-    # countdown page (auto-located remaining business days)
-    def biz_between(cc: str, start: date, end: date) -> int:
-        n = 0
-        d = start
-        while d <= end:
-            wk = d.weekday() >= 5
-            h = public.get((cc, d.year), set())
-            m = makeup.get((cc, d.year), set())
-            if (m and d in m) or (not wk and d not in h):
-                n += 1
-            d += timedelta(days=1)
-        return n
-
-    today_d = date.today()
-    data_years = sorted({y for (_c, y) in public.keys()})
-    static_year = today_d.year if today_d.year in data_years else (data_years[-1] if data_years else today_d.year)
-    static_cc = "US" if "US" in {c["code"] for c in countries} else countries[0]["code"]
-    if static_year != today_d.year:
-        static_start = date(static_year, 1, 1)
-        static_end = date(static_year, 12, 31)
-    else:
-        static_start = today_d
-        static_end = date(static_year, 12, 31)
-    static_total = biz_between(static_cc, date(static_year, 1, 1), date(static_year, 12, 31))
-    static_left = biz_between(static_cc, static_start, static_end)
-    static_month_left = biz_between(static_cc, today_d, date(today_d.year, today_d.month + 1, 1) - timedelta(days=1)) if today_d.month < 12 else biz_between(static_cc, today_d, date(today_d.year, 12, 31))
-    static_done = static_total - static_left
-    static_pct = round(static_done / static_total * 100) if static_total else 0
-    next_hol = None
-    for d in sorted(public.get((static_cc, static_year), set())):
-        if d >= today_d:
-            next_hol = d
-            break
-    next_days = (next_hol - today_d).days if next_hol else None
-
-    static_monthly = []
-    for _m in range(1, 13):
-        _ms = date(static_year, _m, 1)
-        _me = (date(static_year + 1, 1, 1) if _m == 12 else date(static_year, _m + 1, 1)) - timedelta(days=1)
-        static_monthly.append(biz_between(static_cc, _ms, _me))
-    _lo, _hi = min(static_monthly), max(static_monthly)
-    _rng = max(_hi - _lo, 1)
-    cd_bars = "".join(
-        f'<div class="bz" data-m="{_i}" style="height:{round(20 + (v - _lo) / _rng * 66)}%">'
-        f"<b>{v}</b></div>"
-        for _i, v in enumerate(static_monthly)
-    )
-    cd_bar_labels = '<div class="vz-x">' + "".join(f"<span>{m}</span>" for m in MONTHS) + "</div>"
-
-    country_options = "".join(
-        f'<option value="{c["code"]}"{" selected" if c["code"] == static_cc else ""}>{c["name"]}</option>'
-        for c in countries
-    )
-    cd_body = (
-        '<section class="cd-hero" id="hk-countdown" data-country="' + static_cc + '">'
-        '<p class="eyebrow" data-i18n="cd.eyebrow">Live business-day countdown</p>'
-        f'<h1><span data-i18n="home.countdown">Business days left this year</span> <span id="cd-year-label">{static_year}</span></h1>'
-        '<div class="cd-wrap">'
-        '<div class="cd-ring" data-cd-ring style="--p:' + str(static_pct) + '">'
-        '<div class="cd-ring-mid"><div class="cd-big" id="cd-year">' + str(static_left) + '</div>'
-        '<span data-i18n="cd.left">business days left</span></div></div>'
-        '<div class="cd-tiles">'
-        '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">📅</span>'
-        '<div class="v" id="cd-month">' + str(static_month_left) + '</div>'
-        '<div class="k" data-i18n="cd.month">business days left this month</div></div>'
-        '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">🎯</span>'
-        '<div class="v" id="cd-next">' + (str(next_days) if next_days is not None else "—") + '</div>'
-        '<div class="k" data-i18n="cd.next">days until next public holiday</div></div>'
-        '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">🗓️</span>'
-        '<div class="v" id="cd-total">' + str(static_total) + '</div>'
-        '<div class="k" data-i18n="cd.total">business days this year</div></div>'
-        '<div class="cd-tile"><span class="cd-ico" aria-hidden="true">⏱️</span>'
-        '<div class="v"><span class="dot-live"></span><span id="cd-clock">--:--:--</span></div>'
-        '<div class="k" data-i18n="cd.clock">your local time</div></div>'
-        "</div></div>"
-        '<div class="cd-country"><label>Country <select data-cd-country>' + country_options + "</select></label>"
-        '<span><strong id="cd-pct">' + str(static_pct) + '%</strong> <span data-i18n="cd.pct">of the year\'s business days done</span></span></div>'
-        '<div class="vz-wrap"><h3>📊 Business days by month</h3>'
-        '<div class="vz-bars" id="cd-bars">' + cd_bars + "</div>" + cd_bar_labels + "</div>"
-        '<p class="cd-note" data-i18n="cd.lede">Auto-detected from your location — change the country above to '
-        "recalculate. Counts working days only: weekends and public holidays are excluded (China's 补班 counted "
-        "as working days).</p>"
-        '<p style="margin-top:18px"><button type="button" class="btn-share-hot" data-share-open>'
-        '<span aria-hidden="true">✨</span> 生成分享卡片 · Share card</button></p>'
-        "</section>"
+    (out / "countdown").mkdir(exist_ok=True)
+    cd_extra = (
         '<section class="sec"><h2 data-i18n="cd.what">What this counts</h2>'
         "<p>Remaining business days = weekdays left in the year minus public holidays, plus China's make-up "
-        "workdays (补班). The ring shows how much of the year's working time has already passed.</p>"
+        "workdays (\u8865\u73ED). The ring shows how much of the year's working time has already passed.</p>"
         '<div class="callout">Use it for sprint planning, payroll cut-offs, SLA deadlines and year-end delivery '
         "estimates.</div></section>"
         '<section class="sec"><h2>FAQ</h2><dl class="faq">'
         "<dt>Why does the number change when I switch country?</dt><dd>Each country has a different set of public "
         "holidays, so its remaining business days differ.</dd>"
-        "<dt>How is my location detected?</dt><dd>Cloudflare's edge geolocation tells us your country; if the "
-        "country is unsupported we fall back to your timezone or browser language.</dd>"
-        "<dt>Does it update automatically?</dt><dd>Yes — the countdown recalculates on load and the clock ticks "
+        "<dt>How is my location detected?</dt><dd>Your timezone or browser language picks the closest supported "
+        "country; choose another country from the selector to override it.</dd>"
+        "<dt>Does it update automatically?</dt><dd>Yes \u2014 the countdown recalculates on load and the clock ticks "
         "every second.</dd></dl></section>"
     )
-    (out / "countdown").mkdir(exist_ok=True)
     wkdata = "<script>window.WK=" + json.dumps({"countries": countries, "years": YEARS}) + ";</script>"
     static_name = next((c["name"] for c in countries if c["code"] == static_cc), static_cc)
     wshare = {
@@ -1206,7 +1233,7 @@ def main() -> int:
     (out / "countdown" / "index.html").write_text(
         page("Business Days Left in " + str(static_year) + " — Live Countdown",
              "Live countdown of remaining business days in the year, auto-detected for your country. Weekends and public holidays excluded.",
-             f"{site_url}/countdown/", cd_body, base="../",
+             f"{site_url}/countdown/", cd_section(heading="h1") + cd_extra, base="../",
              extra=wkdata
              + "<script>" + COUNTDOWN_JS + "</script>"
              + "<script>window.WK_SHARE=" + json.dumps(wshare, ensure_ascii=False) + ";</script>"
