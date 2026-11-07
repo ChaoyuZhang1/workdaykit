@@ -27,7 +27,8 @@ ROOT = Path(__file__).resolve().parent
 HK = ROOT.parent / "holiday-kit"
 sys.path.insert(0, str(HK / "scripts"))
 from build_site import (COUNTRY_NAMES, flag_emoji, slugify,  # noqa: E402
-                        deemoji, PAGE_SHARE_JS, SEARCH_CSS, SEARCH_JS)
+                        deemoji, PAGE_SHARE_JS, SEARCH_CSS, SEARCH_JS,
+                        support_strip, SUPPORT_CSS, hide_api, SHOW_API)
 
 SITE_NAME = "WorkdayKit"
 SITE_URL = "https://workdaykit.pages.dev"
@@ -708,14 +709,14 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         '<meta property="og:image:height" content="630">'
         '<meta name="twitter:card" content="summary_large_image">'
         f'<script type="application/ld+json">{_WEBSITE_LD}</script>'
-        f"<style>{CSS}{SHARE_CSS}{SEARCH_CSS}{CRUMB_CSS}</style></head><body>{nav}"
+        f"<style>{CSS}{SHARE_CSS}{SUPPORT_CSS}{SEARCH_CSS}{CRUMB_CSS}</style></head><body>{nav}"
         + _wk_crumb_head
         + f'<main class="wrap">{_wk_crumb_html}{body}</main>{foot}'
         + f'<script>window.HK_BASE="{base}";</script>'
         + f"<script>{SEARCH_JS}</script>"
         + f"<script>{MOTION_JS}</script><script>{I18N_JS}</script>{extra}<script>{PAGE_SHARE_JS}</script></body></html>"
     )
-    return deemoji(html)
+    return hide_api(deemoji(html))
 
 
 FAVICON = (
@@ -805,6 +806,7 @@ def page_lang_home(lang: str, site_url: str) -> str:
         + extra_cta
         + "</div></section>"
         + '<p class="viz-note">Localized entry page — the tool itself switches language automatically.</p>'
+        + support_strip("../", "WorkdayKit")
     )
     return page(title=title, desc=lede, canonical=site_url + "/" + lang + "/", body=body,
                 base="../", lang=lang, alternates=hreflang_links(site_url))
@@ -1293,7 +1295,7 @@ def main() -> int:
     (out / "index.html").write_text(
         page("Business Days Calculator — Count Working Days (95 countries)", 
              "Free business days calculator: count working days between dates or add business days, excluding weekends and public holidays.",
-             site_url + "/", body, extra=wk_js,
+             site_url + "/", body + support_strip("", "WorkdayKit"), extra=wk_js,
              alternates=hreflang_links(site_url)),
         encoding="utf-8",
     )
@@ -1456,10 +1458,11 @@ def main() -> int:
     )
     (out / "api").mkdir(exist_ok=True)
     (out / "api" / "index.html").write_text(
-        page("Business Day API — JSON by country and year", "Free static JSON API for business days and public holidays.", f"{site_url}/api/", api_body, base="../"),
+        page("Business Day API — JSON by country and year", "Free static JSON API for business days and public holidays.", f"{site_url}/api/", api_body, base="../", robots="noindex,follow"),
         encoding="utf-8",
     )
-    urls.append("api/")
+    if SHOW_API:
+        urls.append("api/")
     (out / "about").mkdir(exist_ok=True)
     (out / "about" / "index.html").write_text(
         page("About WorkdayKit", "About WorkdayKit, data sources and methodology.", f"{site_url}/about/",
@@ -1497,7 +1500,7 @@ def main() -> int:
                                        "u": f"/{slug_}/{y}/", "k": "year"})
     for _p, _t, _s in [
         ("countdown/", "Business days countdown", "Live countdown for your country"),
-        ("api/", "Free JSON API", "Business days per country and year"),
+        *([("api/", "Free JSON API", "Business days per country and year")] if SHOW_API else []),
         ("about/", "About", "Method and data sources"),
         ("support/", "Support", "Keep the project free"),
     ]:
