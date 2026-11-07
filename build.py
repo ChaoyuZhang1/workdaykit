@@ -596,7 +596,7 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
     nav = (
         '<header class="site-head"><div class="wrap head-inner">'
         f'<a class="brand" href="{base}index.html"><span class="brand-mark">◷</span>{SITE_NAME}</a>'
-        f'<nav><a href="{base}index.html" data-i18n="nav.calc">Calculator</a>'
+        f'<nav><a href="{base}index.html#calc" data-i18n="nav.calc">Calculator</a>'
         f'<a href="{base}countdown/index.html" data-i18n="nav.cd">Countdown</a>'
         f'<a href="{base}index.html#countries" data-i18n="nav.countries">Countries</a>'
         f'<a href="{base}api/index.html" data-i18n="nav.api">API</a>'
@@ -1097,14 +1097,15 @@ def main() -> int:
     ]
     faq_html = "".join(f"<dt>{q}</dt><dd>{a}</dd>" for q, a in faq)
     body = (
-        cd_section(heading="h2", with_bars=False, with_share=False, with_link=True)
+        cd_section(heading="h2", with_bars=True, with_share=False)
         + '<section class="hero">'
         '<p class="eyebrow" data-i18n="hero.eyebrow">Business days · weekends · public holidays</p>'
         '<h1 data-i18n="hero.h1">Business days calculator</h1>'
         '<p class="lede" data-i18n="hero.lede">Count working days between two dates, or add business days to a date — for 95 countries, skipping weekends and public holidays (including China\'s 调休/补班 rules).</p>'
         '</section>'
+        + '<div id="calc"></div>'
         + calc_widget("US", countries, static_preview("US"))
-        + '<section class="sec"><h2 data-i18n="home.countries">Business days by country</h2>'
+        + '<section class="sec" id="countries"><h2 data-i18n="home.countries">Business days by country</h2>'
         '<p class="sub" data-i18n="home.countries.sub">How many business days are left this year, country by country.</p>'
         '<div class="grid">' + "".join(cards) + "</div></section>"
         '<span hidden></span>'
