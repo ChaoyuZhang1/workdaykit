@@ -27,10 +27,24 @@ ROOT = Path(__file__).resolve().parent
 HK = ROOT.parent / "holiday-kit"
 sys.path.insert(0, str(HK / "scripts"))
 from build_site import (COUNTRY_NAMES, flag_emoji, slugify,  # noqa: E402
-                        deemoji, PAGE_SHARE_JS)
+                        deemoji, PAGE_SHARE_JS, SEARCH_CSS, SEARCH_JS)
 
 SITE_NAME = "WorkdayKit"
+SITE_URL = "https://workdaykit.pages.dev"
 SITE_TAGLINE = "Count business days between dates, skip weekends and holidays."
+_WEBSITE_LD = json.dumps({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": SITE_NAME,
+    "url": SITE_URL + "/",
+    "description": SITE_TAGLINE,
+    "potentialAction": {
+        "@type": "SearchAction",
+        "target": {"@type": "EntryPoint",
+                   "urlTemplate": SITE_URL + "/?q={search_term_string}"},
+        "query-input": "required name=search_term_string",
+    },
+}, ensure_ascii=False)
 YEARS = [2025, 2026, 2027, 2028]
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
@@ -611,6 +625,10 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
     nav = (
         '<header class="site-head"><div class="wrap head-inner">'
         f'<a class="brand" href="{base}index.html"><span class="brand-mark">◷</span>{SITE_NAME}</a>'
+        '<button type="button" class="nav-search" data-search-open aria-label="Search">'
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+        'stroke-width="1.9" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/>'
+        '<path d="M15.5 15.5L21 21"/></svg><span>Search</span><kbd>⌘K</kbd></button>'
         f'<nav><a href="{base}index.html#calc" data-i18n="nav.calc">Calculator</a>'
         f'<a href="{base}countdown/index.html" data-i18n="nav.cd">Countdown</a>'
         f'<a href="{base}index.html#countries" data-i18n="nav.countries">Countries</a>'
@@ -642,8 +660,19 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         f'<link rel="canonical" href="{canonical}">'
         '<meta name="robots" content="index,follow">'
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
-        f"<style>{CSS}{SHARE_CSS}</style></head><body>{nav}"
+        f'<meta property="og:type" content="website">'
+        f'<meta property="og:title" content="{title}">'
+        f'<meta property="og:description" content="{desc}">'
+        f'<meta property="og:url" content="{canonical}">'
+        f'<meta property="og:image" content="{SITE_URL}/og-cover.png">'
+        '<meta property="og:image:width" content="1200">'
+        '<meta property="og:image:height" content="630">'
+        '<meta name="twitter:card" content="summary_large_image">'
+        f'<script type="application/ld+json">{_WEBSITE_LD}</script>'
+        f"<style>{CSS}{SHARE_CSS}{SEARCH_CSS}</style></head><body>{nav}"
         f'<main class="wrap">{body}</main>{foot}'
+        f'<script>window.HK_BASE="{base}";</script>'
+        f"<script>{SEARCH_JS}</script>"
         f"<script>{MOTION_JS}</script><script>{I18N_JS}</script>{extra}<script>{PAGE_SHARE_JS}</script></body></html>"
     )
     return deemoji(html)
@@ -1151,6 +1180,7 @@ def main() -> int:
         cdir = out / slug
         cdir.mkdir(parents=True, exist_ok=True)
         cw = calc_widget(cc, countries, static_preview(cc))
+        cur_total, _cur_monthly = business_total(cc, current_year)
         year_rows = []
         for year in YEARS:
             total, monthly = business_total(cc, year)
@@ -1170,6 +1200,15 @@ def main() -> int:
                  + '<section class="sec"><h2>Business days by year</h2>'
                  '<div class="tbl-wrap"><table><thead><tr><th>Year</th><th>Business days</th><th>Months with holidays</th>'
                  "</tr></thead><tbody>" + "".join(year_rows) + "</tbody></table></div></section>"
+                 + f'<section class="sec"><h2>Similar countries</h2><p class="card-note">Closest working-day totals in {current_year}.</p><div class="chips">'
+                 + "".join(
+                     f'<a class="chip" href="../{o["slug"]}/index.html">{o["name"]} · {business_total(o["code"], current_year)[0]} days</a>'
+                     for o in sorted(
+                         (o for o in countries if o["code"] != cc),
+                         key=lambda o: abs(business_total(o["code"], current_year)[0] - cur_total),
+                     )[:4]
+                 )
+                 + '</div></section>'
                  + '<p><a href="../index.html">← All countries</a></p>',
                  base="../../"),
             encoding="utf-8",
@@ -1312,10 +1351,35 @@ def main() -> int:
     (out / "support" / "index.html").write_text(page_support(site_url), encoding="utf-8")
     urls.append("support/")
 
+    # ── site search index ──
+    search_entries = []
+    for c in countries:
+        cc, name_, slug_ = c["code"], c["name"], c["slug"]
+        search_entries.append({"t": name_, "s": "Business days by year",
+                               "u": f"/{slug_}/", "k": "country"})
+        for y in YEARS:
+            total, _m = business_total(cc, y)
+            if total > 0:
+                search_entries.append({"t": f"{name_} {y}", "s": f"{total} business days in {y}",
+                                       "u": f"/{slug_}/{y}/", "k": "year"})
+    for _p, _t, _s in [
+        ("countdown/", "Business days countdown", "Live countdown for your country"),
+        ("api/", "Free JSON API", "Business days per country and year"),
+        ("about/", "About", "Method and data sources"),
+        ("support/", "Support", "Keep the project free"),
+    ]:
+        search_entries.append({"t": _t, "s": _s, "u": f"/{_p}", "k": "page"})
+    (out / "search-index.json").write_text(
+        json.dumps(search_entries, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+
     (out / "favicon.svg").write_text(FAVICON, encoding="utf-8")
+    _og = ROOT / "assets" / "og-cover.png"
+    if _og.exists():
+        (out / "og-cover.png").write_bytes(_og.read_bytes())
     (out / "_headers").write_text(
         "/api/*\n  Access-Control-Allow-Origin: *\n  Cache-Control: public, max-age=86400\n"
-        "/assets/support/*\n  Cache-Control: public, max-age=604800\n",
+        "/assets/support/*\n  Cache-Control: public, max-age=604800\n"
+        "/search-index.json\n  Cache-Control: public, max-age=3600\n",
         encoding="utf-8",
     )
     support_dir = ROOT / "assets" / "support"
