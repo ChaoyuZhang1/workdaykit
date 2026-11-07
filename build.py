@@ -621,7 +621,37 @@ SHARE_JS = r"""
 """
 
 
-def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra: str = "") -> str:
+CRUMB_CSS = """
+.crumbs{font-size:.78rem;color:var(--muted);margin:2px 0 18px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.crumbs a{color:var(--muted);text-decoration:none;border-bottom:1px solid transparent}
+.crumbs a:hover{color:var(--ink);border-bottom-color:currentColor}
+.crumbs span[aria-current]{color:var(--ink);font-weight:600}
+.crumbs .sep{opacity:.45}
+"""
+
+
+def _crumb_block(crumbs, canonical: str, esc_fn=None) -> tuple:
+    """Return (visible html, ld json string) for a breadcrumb trail."""
+    import json as _json
+    from urllib.parse import urljoin as _urljoin
+    esc_ = esc_fn or (lambda s: s)
+    items, parts = [], []
+    for i, (label, href) in enumerate(crumbs, start=1):
+        item = {"@type": "ListItem", "position": i, "name": label}
+        if href:
+            item["item"] = _urljoin(canonical, href)
+            parts.append(f'<a href="{href}">{esc_(label)}</a>')
+        else:
+            parts.append(f'<span aria-current="page">{esc_(label)}</span>')
+        items.append(item)
+    html = '<nav class="crumbs" aria-label="Breadcrumb">' + '<span class="sep">›</span>'.join(parts) + "</nav>"
+    ld = _json.dumps({"@context": "https://schema.org", "@type": "BreadcrumbList",
+                      "itemListElement": items}, ensure_ascii=False)
+    return html, ld
+
+
+def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra: str = "",
+         robots: str = "index,follow", crumbs: list | None = None) -> str:
     nav = (
         '<header class="site-head"><div class="wrap head-inner">'
         f'<a class="brand" href="{base}index.html"><span class="brand-mark">◷</span>{SITE_NAME}</a>'
@@ -652,13 +682,17 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         '<a href="https://holidaykit.pages.dev">Holiday calendars &amp; long weekends</a></p>'
         "</div></footer>"
     )
+    _wk_crumb_html, _wk_crumb_ld = ("", "")
+    if crumbs:
+        _wk_crumb_html, _wk_crumb_ld = _crumb_block(crumbs, canonical)
+    _wk_crumb_head = f'<script type="application/ld+json">{_wk_crumb_ld}</script>' if _wk_crumb_ld else ""
     html = (
         f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         f"<title>{title}</title>"
         f'<meta name="description" content="{desc}">'
         f'<link rel="canonical" href="{canonical}">'
-        '<meta name="robots" content="index,follow">'
+        f'<meta name="robots" content="{robots}">'
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
         f'<meta property="og:type" content="website">'
         f'<meta property="og:title" content="{title}">'
@@ -669,11 +703,12 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         '<meta property="og:image:height" content="630">'
         '<meta name="twitter:card" content="summary_large_image">'
         f'<script type="application/ld+json">{_WEBSITE_LD}</script>'
-        f"<style>{CSS}{SHARE_CSS}{SEARCH_CSS}</style></head><body>{nav}"
-        f'<main class="wrap">{body}</main>{foot}'
-        f'<script>window.HK_BASE="{base}";</script>'
-        f"<script>{SEARCH_JS}</script>"
-        f"<script>{MOTION_JS}</script><script>{I18N_JS}</script>{extra}<script>{PAGE_SHARE_JS}</script></body></html>"
+        f"<style>{CSS}{SHARE_CSS}{SEARCH_CSS}{CRUMB_CSS}</style></head><body>{nav}"
+        + _wk_crumb_head
+        + f'<main class="wrap">{_wk_crumb_html}{body}</main>{foot}'
+        + f'<script>window.HK_BASE="{base}";</script>'
+        + f"<script>{SEARCH_JS}</script>"
+        + f"<script>{MOTION_JS}</script><script>{I18N_JS}</script>{extra}<script>{PAGE_SHARE_JS}</script></body></html>"
     )
     return deemoji(html)
 
@@ -1210,7 +1245,8 @@ def main() -> int:
                  )
                  + '</div></section>'
                  + '<p><a href="../index.html">← All countries</a></p>',
-                 base="../../"),
+                 base="../../",
+                 crumbs=[("Home", "../index.html"), ("Countries", "../index.html#countries"), (name, "")]),
             encoding="utf-8",
         )
         urls.append(f"{slug}/")
@@ -1243,7 +1279,9 @@ def main() -> int:
                      '<div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Day</th></tr></thead><tbody>'
                      + "".join(hol_rows) + "</tbody></table></div></section>"
                      + f'<p><a href="../index.html">← {name} overview</a> · <a href="../../index.html">Calculator</a></p>',
-                     base="../../../"),
+                     base="../../../",
+                     crumbs=[("Home", "../../../index.html"), ("Countries", "../../../index.html#countries"),
+                             (name, "../../index.html"), (str(year), "")]),
                 encoding="utf-8",
             )
             urls.append(f"{slug}/{year}/")
@@ -1387,6 +1425,22 @@ def main() -> int:
         (out / "assets" / "support").mkdir(parents=True, exist_ok=True)
         for p in support_dir.glob("*.png"):
             (out / "assets" / "support" / p.name).write_bytes(p.read_bytes())
+    _404 = (
+        '<section class="hero"><p class="eyebrow">404</p>'
+        "<h1>This page has no business days.</h1>"
+        '<p class="lede">The link may be outdated. Search a country (⌘K), or jump straight to the '
+        "calculator or the live countdown.</p>"
+        '<div class="cta-row"><a class="btn" href="/index.html#calc">Business day calculator</a>'
+        '<a class="btn ghost" href="/countdown/index.html">Live countdown</a>'
+        '<a class="btn ghost" href="/index.html#countries">All countries</a></div></section>'
+    )
+    (out / "404.html").write_text(
+        page("Page not found — " + SITE_NAME,
+             "This page does not exist. Use the calculator or browse business days by country.",
+             site_url + "/404.html", _404, base="/", robots="noindex,follow"),
+        encoding="utf-8",
+    )
+
     (out / "robots.txt").write_text(
         f"User-agent: *\nAllow: /\nSitemap: {site_url}/sitemap.xml\n", encoding="utf-8"
     )
