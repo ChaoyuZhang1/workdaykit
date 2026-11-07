@@ -26,7 +26,8 @@ except ImportError:  # pragma: no cover
 ROOT = Path(__file__).resolve().parent
 HK = ROOT.parent / "holiday-kit"
 sys.path.insert(0, str(HK / "scripts"))
-from build_site import COUNTRY_NAMES, flag_emoji, slugify  # noqa: E402
+from build_site import (COUNTRY_NAMES, flag_emoji, slugify,  # noqa: E402
+                        deemoji, PAGE_SHARE_JS)
 
 SITE_NAME = "WorkdayKit"
 SITE_TAGLINE = "Count business days between dates, skip weekends and holidays."
@@ -394,7 +395,19 @@ I18N_JS = """
 """
 
 
+
 SHARE_CSS = """
+.ic{display:inline-block;vertical-align:-0.14em;flex:none}
+.kpi-ico .ic{width:20px;height:20px}
+.sec-h-ico{display:inline-flex;align-items:center;justify-content:center;vertical-align:-2px}
+.sec-h-ico .ic{width:18px;height:18px;stroke-width:1.9}
+h3 .ic{width:.95em;height:.95em;vertical-align:-0.08em;opacity:.85}
+.cd-ico .ic{width:18px;height:18px;color:#7dd3a8}
+.flag{font-size:.66rem;font-weight:800;letter-spacing:.09em;color:var(--muted);
+  background:rgba(15,23,42,.05);border:1px solid var(--line);border-radius:7px;
+  padding:3px 7px;display:inline-block;line-height:1.2;vertical-align:2px;text-align:center;min-width:2.1em}
+h1 .flag{font-size:.30em;letter-spacing:.10em;vertical-align:.55em;padding:3px 7px;opacity:.85}
+
 .share-modal{position:fixed;inset:0;z-index:80;background:rgba(12,16,22,.62);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px}
 .share-modal.on{display:flex}
 .share-panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;max-width:min(780px,96vw);max-height:94vh;overflow:auto;box-shadow:0 30px 80px rgba(15,17,21,.35)}
@@ -433,6 +446,8 @@ SHARE_CSS = """
 .spark i{flex:1;min-height:2px;border-radius:2px 2px 1px 1px;background:linear-gradient(180deg,#34d399,#0ea5e9);transform-origin:bottom;animation:sparkGrow .8s cubic-bezier(.2,.75,.25,1) both}
 @keyframes sparkGrow{from{transform:scaleY(.05)}to{transform:scaleY(1)}}
 .card-note{font-size:.72rem;color:var(--muted);margin:2px 0 6px}
+.cc-jump{display:flex;align-items:center;gap:10px;margin:-4px 0 16px;color:var(--muted);font-size:.85rem}
+.cc-jump select{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:.85rem;min-width:220px}
 @media (prefers-reduced-motion:reduce){.spark i{animation:none}}
 """
 
@@ -619,7 +634,7 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         '<a href="https://holidaykit.pages.dev">Holiday calendars &amp; long weekends</a></p>'
         "</div></footer>"
     )
-    return (
+    html = (
         f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         f"<title>{title}</title>"
@@ -629,8 +644,9 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
         f"<style>{CSS}{SHARE_CSS}</style></head><body>{nav}"
         f'<main class="wrap">{body}</main>{foot}'
-        f"<script>{MOTION_JS}</script><script>{I18N_JS}</script>{extra}</body></html>"
+        f"<script>{MOTION_JS}</script><script>{I18N_JS}</script>{extra}<script>{PAGE_SHARE_JS}</script></body></html>"
     )
+    return deemoji(html)
 
 
 FAVICON = (
@@ -1097,7 +1113,7 @@ def main() -> int:
     ]
     faq_html = "".join(f"<dt>{q}</dt><dd>{a}</dd>" for q, a in faq)
     body = (
-        cd_section(heading="h2", with_bars=True, with_share=False)
+        cd_section(heading="h2", with_bars=True, with_share=True)
         + '<section class="hero">'
         '<p class="eyebrow" data-i18n="hero.eyebrow">Business days · weekends · public holidays</p>'
         '<h1 data-i18n="hero.h1">Business days calculator</h1>'
@@ -1107,6 +1123,10 @@ def main() -> int:
         + calc_widget("US", countries, static_preview("US"))
         + '<section class="sec" id="countries"><h2 data-i18n="home.countries">Business days by country</h2>'
         '<p class="sub" data-i18n="home.countries.sub">How many business days are left this year, country by country.</p>'
+        '<p class="cc-jump"><label>Jump to a country <select onchange="if(this.value)location.href=this.value">'
+        '<option value="">95 countries…</option>'
+        + "".join(f'<option value="{c["slug"]}/index.html">{c["name"]}</option>' for c in countries)
+        + '</select></label></p>'
         '<div class="grid">' + "".join(cards) + "</div></section>"
         '<span hidden></span>'
         '<section class="sec"><h2 data-i18n="home.how">How it works</h2>'
