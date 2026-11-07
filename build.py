@@ -31,6 +31,7 @@ from build_site import (COUNTRY_NAMES, flag_emoji, slugify,  # noqa: E402
 
 SITE_NAME = "WorkdayKit"
 SITE_URL = "https://workdaykit.pages.dev"
+GOOGLE_VERIFY = "QfC8EpnSFGu7aWk17GyocmVaOBbTxTxy9lgJy3oYzfE"
 SITE_TAGLINE = "Count business days between dates, skip weekends and holidays."
 _WEBSITE_LD = json.dumps({
     "@context": "https://schema.org",
@@ -696,6 +697,7 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         f'<link rel="canonical" href="{canonical}">'
         f"{alternates}"
         f'<meta name="robots" content="{robots}">'
+        f'<meta name="google-site-verification" content="{GOOGLE_VERIFY}">'
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
         f'<meta property="og:type" content="website">'
         f'<meta property="og:title" content="{title}">'
