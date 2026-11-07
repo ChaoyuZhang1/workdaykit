@@ -792,7 +792,7 @@ CALC_JS = """
       'BEGIN:VEVENT', 'UID:' + ymd(d) + '-' + Math.random().toString(36).slice(2) + '@workdaykit',
       'DTSTAMP:' + ymd(d) + 'T000000Z', 'DTSTART;VALUE=DATE:' + ymd(d), 'DTEND;VALUE=DATE:' + ymd(next),
       'SUMMARY:' + (title || 'Business day'), 'TRANSP:TRANSPARENT', 'END:VEVENT', 'END:VCALENDAR'
-    ].join('\r\n');
+    ].join(String.fromCharCode(13, 10));
   }
   function downloadIcs(dateStr, title){
     var blob = new Blob([icsFor(dateStr, title)], { type: 'text/calendar;charset=utf-8' });
