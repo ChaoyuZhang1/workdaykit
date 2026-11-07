@@ -651,7 +651,8 @@ def _crumb_block(crumbs, canonical: str, esc_fn=None) -> tuple:
 
 
 def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra: str = "",
-         robots: str = "index,follow", crumbs: list | None = None) -> str:
+         robots: str = "index,follow", crumbs: list | None = None,
+         lang: str = "en", alternates: str = "") -> str:
     nav = (
         '<header class="site-head"><div class="wrap head-inner">'
         f'<a class="brand" href="{base}index.html"><span class="brand-mark">◷</span>{SITE_NAME}</a>'
@@ -680,18 +681,20 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         f'<a href="{base}index.html">Calculator</a> · '
         f'<a href="{base}support/index.html">♥ Support · 打赏</a> · '
         '<a href="https://holidaykit.pages.dev">Holiday calendars &amp; long weekends</a></p>'
-        "</div></footer>"
+        + lang_links(base)
+        + "</div></footer>"
     )
     _wk_crumb_html, _wk_crumb_ld = ("", "")
     if crumbs:
         _wk_crumb_html, _wk_crumb_ld = _crumb_block(crumbs, canonical)
     _wk_crumb_head = f'<script type="application/ld+json">{_wk_crumb_ld}</script>' if _wk_crumb_ld else ""
     html = (
-        f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        f'<!doctype html><html lang="{lang}"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
         f"<title>{title}</title>"
         f'<meta name="description" content="{desc}">'
         f'<link rel="canonical" href="{canonical}">'
+        f"{alternates}"
         f'<meta name="robots" content="{robots}">'
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
         f'<meta property="og:type" content="website">'
@@ -719,6 +722,90 @@ FAVICON = (
     '<path d="M20 26h24M20 36h14M20 46h9" stroke="#fbfaf7" stroke-width="3.4" stroke-linecap="round"/>'
     '<circle cx="45" cy="44" r="6" fill="#0f6b5c"/></svg>'
 )
+
+
+LANG_CODES = ["zh", "ja", "ko", "es", "fr", "de"]
+
+LANG_LABELS = {"en": "English", "zh": "中文", "ja": "日本語", "ko": "한국어",
+               "es": "Español", "fr": "Français", "de": "Deutsch"}
+
+LANG_TEXT = {
+    "zh": [
+        "工作日计算器 — 计算两个日期之间的工作日（95 个国家）",
+        "免费计算两个日期之间的工作日，或按工作日加减天数：自动排除周末与公共假期，支持 95 个国家和中国调休补班。",
+        "打开计算器",
+        "倒计时",
+        "按国家查看"
+    ],
+    "ja": [
+        "営業日計算ツール — 2 つの日付の間の営業日を計算（95 か国）",
+        "週末と祝日を除いた営業日を無料で計算。95 か国に対応、中国の振替出勤にも対応。",
+        "計算ツールを開く",
+        "カウントダウン",
+        "国別に見る"
+    ],
+    "ko": [
+        "영업일 계산기 — 두 날짜 사이의 영업일 계산 (95개국)",
+        "주말과 공휴일을 제외한 영업일을 무료로 계산합니다. 95개국 지원.",
+        "계산기 열기",
+        "카운트다운",
+        "국가별 보기"
+    ],
+    "es": [
+        "Calculadora de días hábiles — cuenta días laborables (95 países)",
+        "Calcula gratis los días hábiles entre dos fechas, sin fines de semana ni festivos. 95 países.",
+        "Abrir calculadora",
+        "Cuenta atrás",
+        "Ver por país"
+    ],
+    "fr": [
+        "Calculateur de jours ouvrés — comptez les jours travaillés (95 pays)",
+        "Calculez gratuitement les jours ouvrés entre deux dates, week-ends et jours fériés exclus. 95 pays.",
+        "Ouvrir le calculateur",
+        "Compte à rebours",
+        "Voir par pays"
+    ],
+    "de": [
+        "Werktagsrechner — Arbeitstage zwischen Daten zählen (95 Länder)",
+        "Berechne kostenlos Werktage zwischen zwei Daten – ohne Wochenenden und Feiertage. 95 Länder.",
+        "Rechner öffnen",
+        "Countdown",
+        "Nach Land ansehen"
+    ]
+}
+
+
+def hreflang_links(site_url: str) -> str:
+    parts = ['<link rel="alternate" hreflang="en" href="' + site_url + '/">']
+    for code in LANG_CODES:
+        parts.append('<link rel="alternate" hreflang="' + code + '" href="' + site_url + '/' + code + '/">')
+    parts.append('<link rel="alternate" hreflang="x-default" href="' + site_url + '/">')
+    return "".join(parts)
+
+
+def lang_links(base: str) -> str:
+    items = ['<a href="' + base + 'index.html">English</a>']
+    for code in LANG_CODES:
+        items.append('<a href="' + base + code + '/index.html">' + LANG_LABELS[code] + "</a>")
+    return '<p class="lang-links">' + " · ".join(items) + "</p>"
+
+
+def page_lang_home(lang: str, site_url: str) -> str:
+    t = LANG_TEXT[lang]
+    title, lede, cta1, cta2 = t[0], t[1], t[2], t[3]
+    extra_cta = ('<a class="btn ghost" href="../index.html#countries">' + t[4] + "</a>") if len(t) > 4 else ""
+    cta2_href = "../countdown/index.html#calc"
+    body = (
+        '<section class="hero"><p class="eyebrow">' + SITE_NAME + " · " + LANG_LABELS[lang] + "</p>"
+        + "<h1>" + title + "</h1><p class='lede'>" + lede + "</p>"
+        + '<div class="cta-row"><a class="btn" href="../index.html">' + cta1 + "</a>"
+        + '<a class="btn ghost" href="' + cta2_href + '">' + cta2 + "</a>"
+        + extra_cta
+        + "</div></section>"
+        + '<p class="viz-note">Localized entry page — the tool itself switches language automatically.</p>'
+    )
+    return page(title=title, desc=lede, canonical=site_url + "/" + lang + "/", body=body,
+                base="../", lang=lang, alternates=hreflang_links(site_url))
 
 
 def page_support(site_url: str) -> str:
@@ -1204,10 +1291,16 @@ def main() -> int:
     (out / "index.html").write_text(
         page("Business Days Calculator — Count Working Days (95 countries)", 
              "Free business days calculator: count working days between dates or add business days, excluding weekends and public holidays.",
-             site_url + "/", body, extra=wk_js),
+             site_url + "/", body, extra=wk_js,
+             alternates=hreflang_links(site_url)),
         encoding="utf-8",
     )
     urls.append("")
+    for _lang in LANG_CODES:
+        _ld = out / _lang
+        _ld.mkdir(parents=True, exist_ok=True)
+        (_ld / "index.html").write_text(page_lang_home(_lang, site_url), encoding="utf-8")
+        urls.append(_lang + "/")
 
     # country + year pages + API
     for c in countries:
