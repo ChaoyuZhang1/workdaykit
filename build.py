@@ -28,7 +28,8 @@ HK = ROOT.parent / "holiday-kit"
 sys.path.insert(0, str(HK / "scripts"))
 from build_site import (COUNTRY_NAMES, flag_emoji, slugify,  # noqa: E402
                         deemoji, PAGE_SHARE_JS, SEARCH_CSS, SEARCH_JS,
-                        support_strip, SUPPORT_CSS, hide_api, SHOW_API)
+                        support_strip, SUPPORT_CSS, hide_api, SHOW_API,
+                          clean_links, faq_block, faq_json_ld)
 
 SITE_NAME = "WorkdayKit"
 SITE_URL = "https://workdaykit.pages.dev"
@@ -654,7 +655,10 @@ def _crumb_block(crumbs, canonical: str, esc_fn=None) -> tuple:
 
 def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra: str = "",
          robots: str = "index,follow", crumbs: list | None = None,
-         lang: str = "en", alternates: str = "") -> str:
+         lang: str = "en", alternates: str = "",
+         json_ld: str = "") -> str:
+    _json_ld_script = (f'<script type="application/ld+json">{json_ld}</script>'
+                       if json_ld else "")
     nav = (
         '<header class="site-head"><div class="wrap head-inner">'
         f'<a class="brand" href="{base}index.html"><span class="brand-mark">◷</span>{SITE_NAME}</a>'
@@ -709,6 +713,7 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         '<meta property="og:image:height" content="630">'
         '<meta name="twitter:card" content="summary_large_image">'
         f'<script type="application/ld+json">{_WEBSITE_LD}</script>'
+        f"{_json_ld_script}"
         f"<style>{CSS}{SHARE_CSS}{SUPPORT_CSS}{SEARCH_CSS}{CRUMB_CSS}</style></head><body>{nav}"
         + _wk_crumb_head
         + f'<main class="wrap">{_wk_crumb_html}{body}</main>{foot}'
@@ -716,7 +721,7 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         + f"<script>{SEARCH_JS}</script>"
         + f"<script>{MOTION_JS}</script><script>{I18N_JS}</script>{extra}<script>{PAGE_SHARE_JS}</script></body></html>"
     )
-    return hide_api(deemoji(html))
+    return clean_links(hide_api(deemoji(html)))
 
 
 FAVICON = (
@@ -1322,6 +1327,17 @@ def main() -> int:
                 f'<tr><td><a href="{year}/index.html">{year}</a></td><td>{total}</td>'
                 f"<td>{sum(1 for m in monthly[1:] if m)}</td></tr>"
             )
+        faq = [
+            (f"How many business days are there in {name} in {current_year}?",
+             f"{cur_total} business days in {current_year}, after weekends and public holidays are "
+             "removed from the calendar."),
+            ("Are public holidays already excluded from the count?",
+             "Yes. The count drops weekends and every public holiday that falls on a weekday, using the "
+             "official national holiday calendar for that country."),
+            ("Can I count business days between two custom dates?",
+             "Yes — the calculator on the homepage counts working days between any two dates, and can also "
+             "add or subtract a number of business days."),
+        ]
         (cdir / "index.html").write_text(
             page(f"{name} Business Days {current_year}", f"Business days in {name}: count working days by year, with public holidays.",
                  f"{site_url}/{slug}/",
@@ -1341,9 +1357,11 @@ def main() -> int:
                      )[:4]
                  )
                  + '</div></section>'
+                 + '<section class="sec"><h2>Frequently asked questions</h2>' + faq_block(faq) + "</section>"
                  + '<p><a href="../index.html">← All countries</a></p>',
                  base="../../",
-                 crumbs=[("Home", "../index.html"), ("Countries", "../index.html#countries"), (name, "")]),
+                 crumbs=[("Home", "../index.html"), ("Countries", "../index.html#countries"), (name, "")],
+                 json_ld=faq_json_ld(faq)),
             encoding="utf-8",
         )
         urls.append(f"{slug}/")
