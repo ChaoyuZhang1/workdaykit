@@ -37,6 +37,7 @@ from build_site import (COUNTRY_NAMES, flag_emoji, slugify,  # noqa: E402
 SITE_NAME = "WorkdayKit"
 SITE_URL = "https://workdaykit.pages.dev"
 GOOGLE_VERIFY = "QfC8EpnSFGu7aWk17GyocmVaOBbTxTxy9lgJy3oYzfE"
+ADSENSE_CLIENT = "ca-pub-7313518062740280"
 SITE_TAGLINE = "Count business days between dates, skip weekends and holidays."
 _WEBSITE_LD = json.dumps({
     "@context": "https://schema.org",
@@ -722,6 +723,8 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         f"{alternates}"
         f'<meta name="robots" content="{robots}">'
         f'<meta name="google-site-verification" content="{GOOGLE_VERIFY}">'
+        f'<meta name="google-adsense-account" content="{ADSENSE_CLIENT}">'
+        f'<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={ADSENSE_CLIENT}" crossorigin="anonymous"></script>'
         '<link rel="icon" href="/favicon.svg" type="image/svg+xml">'
         f'<meta property="og:type" content="website">'
         f'<meta property="og:title" content="{title}">'
@@ -1548,6 +1551,10 @@ def main() -> int:
     (out / "search-index.json").write_text(
         json.dumps(search_entries, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
+    (out / "ads.txt").write_text(
+        f"google.com, {ADSENSE_CLIENT.split('ca-')[-1]}, DIRECT, f08c47fec0942fa0\n",
+        encoding="utf-8",
+    )
     (out / "favicon.svg").write_text(FAVICON, encoding="utf-8")
     _og = ROOT / "assets" / "og-cover.png"
     if _og.exists():
