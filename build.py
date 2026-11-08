@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import calendar
+import hashlib
 import json
 import shutil
 import sys
@@ -653,6 +654,22 @@ def _crumb_block(crumbs, canonical: str, esc_fn=None) -> tuple:
     return html, ld
 
 
+_CSS_CACHE: dict[str, str] = {}
+
+
+def _css_bundle() -> str:
+    if "css" not in _CSS_CACHE:
+        bundle = CSS + SHARE_CSS + SUPPORT_CSS + SEARCH_CSS + CRUMB_CSS
+        _CSS_CACHE["css"] = bundle
+        _CSS_CACHE["ver"] = hashlib.md5(bundle.encode("utf-8")).hexdigest()[:10]
+    return _CSS_CACHE["css"]
+
+
+def _css_ver() -> str:
+    _css_bundle()
+    return _CSS_CACHE["ver"]
+
+
 def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra: str = "",
          robots: str = "index,follow", crumbs: list | None = None,
          lang: str = "en", alternates: str = "",
@@ -714,7 +731,8 @@ def page(title: str, desc: str, canonical: str, body: str, base: str = "", extra
         '<meta name="twitter:card" content="summary_large_image">'
         f'<script type="application/ld+json">{_WEBSITE_LD}</script>'
         f"{_json_ld_script}"
-        f"<style>{CSS}{SHARE_CSS}{SUPPORT_CSS}{SEARCH_CSS}{CRUMB_CSS}</style></head><body>{nav}"
+        f'<link rel="stylesheet" href="{base}assets/site.css?v={_css_ver()}">'
+        f"</head><body>{nav}"
         + _wk_crumb_head
         + f'<main class="wrap">{_wk_crumb_html}{body}</main>{foot}'
         + f'<script>window.HK_BASE="{base}";</script>'
@@ -1122,7 +1140,9 @@ def main() -> int:
     out = ROOT / "dist"
     if out.exists():
         shutil.rmtree(out)
-    out.mkdir(parents=True)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "assets").mkdir(exist_ok=True)
+    (out / "assets" / "site.css").write_text(_css_bundle(), encoding="utf-8")
     qr_dir = out / "assets" / "qr"
     qr_dir.mkdir(parents=True, exist_ok=True)
     if qrcode is not None:
@@ -1533,7 +1553,8 @@ def main() -> int:
     (out / "_headers").write_text(
         "/api/*\n  Access-Control-Allow-Origin: *\n  Cache-Control: public, max-age=86400\n"
         "/assets/support/*\n  Cache-Control: public, max-age=604800\n"
-        "/search-index.json\n  Cache-Control: public, max-age=3600\n",
+        "/search-index.json\n  Cache-Control: public, max-age=3600\n"
+        "/assets/site.css\n  Cache-Control: public, max-age=31536000, immutable\n",
         encoding="utf-8",
     )
     support_dir = ROOT / "assets" / "support"
